@@ -1,9 +1,13 @@
+import { useState } from 'react';
 import { FEUILLES } from '../data/tcc';
 import { stockage, formaterDate } from '../lib/storage';
+import { demanderIA } from '../lib/ia';
 
 export default function Suivi() {
   const entrees = stockage.getEntrees();
   const profil = stockage.getProfil();
+  const [synthese, setSynthese] = useState('');
+  const [chargementSynthese, setChargementSynthese] = useState(false);
 
   // Bilan du labo de prédictions
   const predictions = stockage.getEntrees('predictions');
@@ -21,6 +25,26 @@ export default function Suivi() {
 
   const maxNb = Math.max(1, ...parFeuille.map(f => f.nb));
 
+  // 14 derniers jours pour la synthèse
+  const recentes = entrees.filter(e => Date.now() - new Date(e.date).getTime() < 14 * 86400000);
+
+  const genererSynthese = async () => {
+    setChargementSynthese(true);
+    setSynthese('');
+    const lignes = recentes.slice(0, 20).map(e => {
+      const f = FEUILLES.find(x => x.slug === e.feuille);
+      const vals = Object.entries(e.valeurs)
+        .filter(([, v]) => v !== '' && !(Array.isArray(v) && v.length === 0))
+        .map(([k, v]) => `${k}: ${Array.isArray(v) ? v.join(', ') : v}`)
+        .join(' | ');
+      return `[${new Date(e.date).toLocaleDateString('fr-FR')} — ${f?.titre}] ${vals}`;
+    }).join('\n');
+    const contenu = `Voici mes entrées de journal TCC des 14 derniers jours. Prépare-moi une synthèse pour ma thérapeute.\n\n${lignes}`;
+    const { texte } = await demanderIA('synthese', contenu);
+    setSynthese(texte);
+    setChargementSynthese(false);
+  };
+
   return (
     <div className="page">
       <div className="conteneur-etroit apparition" style={{ paddingTop: '2.2rem' }}>
@@ -28,6 +52,34 @@ export default function Suivi() {
         <p style={{ color: 'var(--encre-2)', marginTop: '0.4rem' }}>
           Des preuves concrètes de ton travail — c'est ça qui compte, pas la perfection.
         </p>
+
+        <div className="carte fiche" style={{ marginTop: '1.6rem', ['--fiche-couleur' as string]: '#7A5C8A' }}>
+          <h3>📝 Synthèse pour ma thérapeute</h3>
+          <p style={{ color: 'var(--encre-2)', margin: '0.5rem 0 1rem' }}>
+            L'assistant TCC résume tes entrées des 14 derniers jours en un point clair à
+            apporter en séance : situations marquantes, émotions récurrentes, distorsions,
+            progrès. {recentes.length === 0 && 'Remplis d\'abord quelques feuilles pour l\'activer.'}
+          </p>
+          <button
+            className="btn btn-primaire"
+            onClick={genererSynthese}
+            disabled={chargementSynthese || recentes.length === 0}
+          >
+            {chargementSynthese ? '📝 Rédaction en cours...' : 'Générer ma synthèse'}
+          </button>
+          {synthese && (
+            <div className="encart encart-info apparition" style={{ marginTop: '1rem', whiteSpace: 'pre-wrap' }}>
+              {synthese}
+              <button
+                className="btn btn-doux btn-sm"
+                style={{ marginTop: '0.8rem' }}
+                onClick={() => navigator.clipboard.writeText(synthese)}
+              >
+                📋 Copier
+              </button>
+            </div>
+          )}
+        </div>
 
         {testees > 0 && (
           <div className="carte" style={{ marginTop: '1.6rem' }}>

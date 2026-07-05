@@ -1,24 +1,24 @@
 import { useRef, useState, useEffect } from 'react';
 import { stockage } from '../lib/storage';
-import { connectGoogle, disconnectGoogle, isConnected, getUser } from '../lib/google-drive';
+import { connectGoogle, disconnectGoogle, isConnected, getUserEmail } from '../lib/google-drive';
 
 export default function Sauvegarde() {
   const fichierRef = useRef<HTMLInputElement>(null);
   const [message, setMessage] = useState('');
   const [googleConnected, setGoogleConnected] = useState(isConnected());
-  const [googleUser, setGoogleUser] = useState(getUser());
+  const [emailGoogle, setEmailGoogle] = useState(getUserEmail());
   const entrees = stockage.getEntrees();
 
   useEffect(() => {
     setGoogleConnected(isConnected());
-    setGoogleUser(getUser());
+    setEmailGoogle(getUserEmail());
   }, []);
 
   const connecterGoogle = async () => {
     const ok = await connectGoogle();
     if (ok) {
       setGoogleConnected(true);
-      setGoogleUser(getUser());
+      setEmailGoogle(getUserEmail());
       setMessage('✓ Connecté à Google Drive ! Tes données se synchronisent maintenant automatiquement.');
       setTimeout(() => setMessage(''), 4000);
     } else {
@@ -29,7 +29,7 @@ export default function Sauvegarde() {
   const deconnecter = async () => {
     await disconnectGoogle();
     setGoogleConnected(false);
-    setGoogleUser(null);
+    setEmailGoogle('');
     setMessage('✓ Déconnecté de Google Drive.');
   };
 
@@ -62,7 +62,7 @@ export default function Sauvegarde() {
           {googleConnected ? (
             <>
               <div className="encart encart-succes" style={{ marginTop: '0.8rem', marginBottom: 0 }}>
-                ✓ Connecté au compte : <strong>{googleUser?.getBasicProfile?.()?.getEmail?.() || 'Google'}</strong>
+                ✓ Connecté au compte : <strong>{emailGoogle || 'Google'}</strong>
               </div>
               <p style={{ color: 'var(--encre-2)', margin: '1rem 0 0' }}>
                 Tes données se synchronisent automatiquement dans un dossier « Journal TCC » de ton Drive.

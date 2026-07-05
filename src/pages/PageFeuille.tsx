@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { EMOTIONS, DISTORSIONS, FEUILLES, ChampFeuille } from '../data/tcc';
 import { stockage, formaterDate } from '../lib/storage';
+import { demanderIA, construireContenuBEC } from '../lib/ia';
 
 // ── Sélecteur d'émotions (100+, par familles) ──
 function SelecteurEmotions({ valeur, onChange }: { valeur: string[]; onChange: (v: string[]) => void }) {
@@ -144,9 +145,20 @@ export default function PageFeuille() {
   const [valeurs, setValeurs] = useState<Record<string, unknown>>({});
   const [sauvegarde, setSauvegarde] = useState(false);
   const [cle, setCle] = useState(0); // pour réinitialiser le formulaire
+  const [iaTexte, setIaTexte] = useState('');
+  const [iaChargement, setIaChargement] = useState(false);
   const historique = useMemo(() => stockage.getEntrees(slug || ''), [slug, sauvegarde, cle]);
 
   if (!feuille) { navigate('/feuilles'); return null; }
+
+  const demanderFeedback = async () => {
+    setIaChargement(true);
+    setIaTexte('');
+    const contenu = construireContenuBEC(valeurs);
+    const { texte } = await demanderIA('feedback_bec', contenu);
+    setIaTexte(texte);
+    setIaChargement(false);
+  };
 
   const enregistrer = () => {
     const rempli = Object.values(valeurs).some(v =>
@@ -213,6 +225,29 @@ export default function PageFeuille() {
           <button className="btn btn-primaire no-print" onClick={enregistrer} style={{ width: '100%' }}>
             Enregistrer cette entrée ✓
           </button>
+
+          {feuille.slug === 'bec' && (
+            <div className="no-print" style={{ marginTop: '1rem' }}>
+              <button
+                className="btn btn-ambre"
+                onClick={demanderFeedback}
+                disabled={iaChargement}
+                style={{ width: '100%' }}
+              >
+                {iaChargement ? '🤔 L\'assistant réfléchit...' : '💬 Demander un retour à l\'assistant TCC'}
+              </button>
+              <p style={{ color: 'var(--encre-3)', fontSize: '0.82rem', marginTop: '0.5rem', textAlign: 'center' }}>
+                L'assistant pose des questions pour t'aider à réfléchir — il ne remplace pas ta thérapeute.
+              </p>
+            </div>
+          )}
+
+          {iaTexte && (
+            <div className="no-print encart encart-info apparition" style={{ marginTop: '1rem', whiteSpace: 'pre-wrap' }}>
+              <strong>💬 Retour de l'assistant TCC</strong>
+              <div style={{ marginTop: '0.6rem' }}>{iaTexte}</div>
+            </div>
+          )}
         </div>
 
         {historique.length > 0 && (
