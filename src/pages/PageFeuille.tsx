@@ -292,12 +292,7 @@ export default function PageFeuille() {
 
                   const champCible: string = (slug && champsCibles[slug]) || 'observations'; // Fallback
                   
-                  if (!champCible || !(champCible in valeurs)) {
-                    alert('⚠️ Champ cible non trouvé pour cette feuille. Feedback copié dans le presse-papiers.');
-                    navigator.clipboard.writeText(iaTexte);
-                    return;
-                  }
-
+                  // Pas de validation stricte — on laisse le champ être créé s'il n'existe pas
                   let texteIntegre = '';
                   const contenuActuel = (valeurs[champCible] as string) || '';
 
