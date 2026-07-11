@@ -158,8 +158,30 @@ export default function PageFeuille() {
   const demanderFeedback = async () => {
     setIaChargement(true);
     setIaTexte('');
-    const contenu = construireContenuBEC(valeurs);
-    const { texte } = await demanderIA('feedback_bec', contenu);
+    
+    // Détermine le type de feuille pour le prompt adapté
+    let typeIa = 'feedback_bec';
+    if (slug === 'arbre') typeIa = 'feedback_arbre';
+    else if (slug === 'parking') typeIa = 'feedback_parking';
+    else if (slug === 'predictions') typeIa = 'feedback_predictions';
+    else if (slug === 'schemas') typeIa = 'feedback_schemas';
+    else if (slug === 'comportements-securite') typeIa = 'feedback_comportements';
+    else if (slug === 'decatastrophisation') typeIa = 'feedback_decatastrophisation';
+
+    // Construit le contenu selon le type de feuille
+    let contenu = '';
+    if (slug === 'bec') {
+      contenu = construireContenuBEC(valeurs);
+    } else {
+      // Pour les autres feuilles, on envoie simplement les valeurs remplies
+      const champRemplis = Object.entries(valeurs)
+        .filter(([, v]) => v !== '' && !(Array.isArray(v) && v.length === 0))
+        .map(([k, v]) => `${k}: ${Array.isArray(v) ? v.join(', ') : v}`)
+        .join('\n');
+      contenu = `Voici ce que j'ai noté :\n\n${champRemplis}\n\nAide-moi à y voir plus clair avec quelques questions.`;
+    }
+
+    const { texte } = await demanderIA(typeIa as any, contenu);
     setIaTexte(texte);
     setIaChargement(false);
   };
@@ -230,21 +252,19 @@ export default function PageFeuille() {
             Enregistrer cette entrée ✓
           </button>
 
-          {feuille.slug === 'bec' && (
-            <div className="no-print" style={{ marginTop: '1rem' }}>
-              <button
-                className="btn btn-ambre"
-                onClick={demanderFeedback}
-                disabled={iaChargement}
-                style={{ width: '100%' }}
-              >
-                {iaChargement ? '🤔 L\'assistant réfléchit...' : '💬 Demander un retour à l\'assistant TCC'}
-              </button>
-              <p style={{ color: 'var(--encre-3)', fontSize: '0.82rem', marginTop: '0.5rem', textAlign: 'center' }}>
-                L'assistant pose des questions pour t'aider à réfléchir — il ne remplace pas ta thérapeute.
-              </p>
-            </div>
-          )}
+          <div className="no-print" style={{ marginTop: '1rem' }}>
+            <button
+              className="btn btn-ambre"
+              onClick={demanderFeedback}
+              disabled={iaChargement}
+              style={{ width: '100%' }}
+            >
+              {iaChargement ? '🤔 L\'assistant réfléchit...' : '💬 Besoin d\'aide sur ce que tu as écrit ?'}
+            </button>
+            <p style={{ color: 'var(--encre-3)', fontSize: '0.82rem', marginTop: '0.5rem', textAlign: 'center' }}>
+              L'assistant pose des questions pour t'aider à creuser — il ne remplace pas ta thérapeute.
+            </p>
+          </div>
 
           {iaTexte && (
             <div className="no-print encart encart-info apparition" style={{ marginTop: '1rem', whiteSpace: 'pre-wrap' }}>

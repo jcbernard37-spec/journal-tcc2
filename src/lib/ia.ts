@@ -8,7 +8,7 @@
 const EST_LOCAL = typeof window !== 'undefined' &&
   (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
 
-export type TypeIA = 'feedback_bec' | 'synthese' | 'psychoeducation' | 'compagnon';
+export type TypeIA = 'feedback_bec' | 'feedback_arbre' | 'feedback_parking' | 'feedback_predictions' | 'feedback_schemas' | 'feedback_comportements' | 'feedback_decatastrophisation' | 'synthese' | 'psychoeducation' | 'compagnon';
 
 export interface MessageChat {
   role: 'user' | 'assistant';
