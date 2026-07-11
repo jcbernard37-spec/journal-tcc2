@@ -2,12 +2,14 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { FEUILLES } from '../data/tcc';
 import { stockage, formaterDate } from '../lib/storage';
+import { analyserDernier7Jours } from '../lib/analyse';
 
 export default function Suivi() {
   const navigate = useNavigate();
   const entrees = stockage.getEntrees();
   const [filtre, setFiltre] = useState<string | null>(null);
   const [entreeSelectionnee, setEntreeSelectionnee] = useState<typeof entrees[0] | null>(null);
+  const analyse = analyserDernier7Jours();
 
   // Groupe les entrées par feuille
   const entreesParFeuille: Record<string, typeof entrees> = {};
@@ -34,6 +36,54 @@ export default function Suivi() {
           Rellis ce que tu as rempli, ou continue à travailler dessus.
         </p>
 
+        {/* B4 — Observations des 7 derniers jours */}
+        {analyse.observations.length > 0 && (
+          <div className="carte" style={{ marginBottom: '1.4rem', background: 'var(--lin-pale)', borderLeft: '4px solid var(--ambre)' }}>
+            <h3 style={{ margin: '0 0 0.8rem', color: 'var(--ambre)' }}>💡 Tes patterns ces 7 derniers jours</h3>
+            <div style={{ display: 'grid', gap: '0.6rem' }}>
+              {analyse.observations.map((obs, i) => (
+                <div key={i} style={{ fontSize: '0.95rem', color: 'var(--encre)', lineHeight: 1.6 }}>
+                  {obs}
+                </div>
+              ))}
+            </div>
+
+            {/* Détails supplémentaires si disponibles */}
+            {(analyse.emotions.length > 0 || analyse.distorsions.length > 0 || analyse.predictions.total > 0) && (
+              <details style={{ marginTop: '1rem', paddingTop: '1rem', borderTop: '1px solid rgba(0,0,0,0.1)' }}>
+                <summary style={{ cursor: 'pointer', fontWeight: 600, color: 'var(--ambre)' }}>Voir les détails</summary>
+                <div style={{ marginTop: '0.8rem', display: 'grid', gap: '0.8rem' }}>
+                  {analyse.emotions.length > 0 && (
+                    <div>
+                      <div style={{ fontWeight: 600, fontSize: '0.9rem', marginBottom: '0.4rem' }}>Émotions top :</div>
+                      <div style={{ fontSize: '0.85rem', color: 'var(--encre-2)' }}>
+                        {analyse.emotions.map(e => `${e.emotion} (${e.pourcentage}%)`).join(' • ')}
+                      </div>
+                    </div>
+                  )}
+                  {analyse.distorsions.length > 0 && (
+                    <div>
+                      <div style={{ fontWeight: 600, fontSize: '0.9rem', marginBottom: '0.4rem' }}>Distorsions récurrentes :</div>
+                      <div style={{ fontSize: '0.85rem', color: 'var(--encre-2)' }}>
+                        {analyse.distorsions.map(d => `${d.nom} (${d.pourcentage}%)`).join(' • ')}
+                      </div>
+                    </div>
+                  )}
+                  {analyse.predictions.total > 0 && (
+                    <div>
+                      <div style={{ fontWeight: 600, fontSize: '0.9rem', marginBottom: '0.4rem' }}>Prédictions :</div>
+                      <div style={{ fontSize: '0.85rem', color: 'var(--encre-2)' }}>
+                        {analyse.predictions.total} prédictions, {analyse.predictions.tauxReussite}% réalisées
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </details>
+            )}
+          </div>
+        )}
+
+        {/* Historique des entrées */}
         {entrees.length === 0 ? (
           <div className="carte" style={{ textAlign: 'center', padding: '2rem 1rem' }}>
             <p style={{ color: 'var(--encre-3)' }}>Aucune entrée pour l'instant.</p>
