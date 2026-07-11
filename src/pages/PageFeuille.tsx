@@ -3,6 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { EMOTIONS, DISTORSIONS, FEUILLES, ChampFeuille } from '../data/tcc';
 import { stockage, formaterDate } from '../lib/storage';
 import { demanderIA, construireContenuBEC } from '../lib/ia';
+import { BoutonMicro } from '../lib/BoutonMicro';
 
 // ── Sélecteur d'émotions (100+, par familles) ──
 function SelecteurEmotions({ valeur, onChange }: { valeur: string[]; onChange: (v: string[]) => void }) {
@@ -87,8 +88,11 @@ function Champ({ champ, valeur, onChange, imprimer }: {
       )}
       {champ.type === 'zone' && (
         <>
-          <textarea className="no-print" value={(valeur as string) || ''} placeholder={champ.placeholder}
-            onChange={e => onChange(e.target.value)} />
+          <div className="no-print" style={{ display: 'flex', gap: '0.5rem', alignItems: 'flex-start' }}>
+            <textarea style={{ flex: 1 }} value={(valeur as string) || ''} placeholder={champ.placeholder}
+              onChange={e => onChange(e.target.value)} />
+            <BoutonMicro onTexteDicte={t => onChange(((valeur as string) || '') + (valeur ? ' ' : '') + t)} />
+          </div>
           {imprimer && <div className="zone-ecriture-print" />}
         </>
       )}

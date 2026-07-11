@@ -195,6 +195,12 @@ input[type="range"]::-webkit-slider-thumb {
   * { transition: none !important; }
 }
 
+/* ── Pulsation du micro pendant la dictée ── */
+@keyframes pulse-micro {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(181, 84, 77, 0.4); }
+  50% { box-shadow: 0 0 0 8px rgba(181, 84, 77, 0); }
+}
+
 /* ── Apparition douce ── */
 .apparition { animation: apparition 0.5s ease both; }
 @keyframes apparition {

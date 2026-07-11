@@ -2,6 +2,7 @@ import { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { converserAvecCompagnon, MessageChat } from '../lib/ia';
 import { stockage } from '../lib/storage';
+import { BoutonMicro } from '../lib/BoutonMicro';
 
 // Suggestions d'amorce pour démarrer
 const AMORCES = [
@@ -119,7 +120,8 @@ export default function Assistant() {
         )}
 
         {/* Zone de saisie */}
-        <div style={{ display: 'flex', gap: '0.5rem', marginTop: '1rem' }}>
+        <div style={{ display: 'flex', gap: '0.5rem', marginTop: '1rem', alignItems: 'flex-end' }}>
+          <BoutonMicro onTexteDicte={t => setSaisie(s => (s ? s + ' ' : '') + t)} />
           <textarea
             value={saisie}
             onChange={e => setSaisie(e.target.value)}
@@ -129,7 +131,7 @@ export default function Assistant() {
                 envoyer(saisie);
               }
             }}
-            placeholder="Écris ici ce que tu ressens…"
+            placeholder="Écris ou dicte ce que tu ressens…"
             style={{
               flex: 1, padding: '0.8rem 1rem', borderRadius: 'var(--rayon-sm)',
               border: '1.5px solid #DDD5C7', fontFamily: 'inherit', fontSize: '1rem',
