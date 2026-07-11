@@ -192,7 +192,13 @@ export default async function handler(req, res) {
       .map((b) => b.text)
       .join('\n') || '';
 
-    return res.status(200).json({ reponse: texte });
+    return res.status(200).json({ 
+      reponse: texte,
+      tokens: {
+        input_tokens: data.usage?.input_tokens || 0,
+        output_tokens: data.usage?.output_tokens || 0,
+      }
+    });
   } catch (error) {
     console.error('Erreur serveur:', error);
     return res.status(500).json({ error: 'Erreur serveur.' });

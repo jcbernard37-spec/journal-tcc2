@@ -3,6 +3,7 @@ import { FEUILLES, SCHEMAS, FAMILLES_SCHEMAS } from '../data/tcc';
 import { stockage } from '../lib/storage';
 import { genererParcours } from '../lib/parcours';
 import { useState, useEffect } from 'react';
+import { getBudget, setCreditInitial, formatBudget } from '../lib/budget';
 
 export default function Hub() {
   const navigate = useNavigate();
@@ -11,6 +12,9 @@ export default function Hub() {
   const cetteSemaine = entrees.filter(e => Date.now() - new Date(e.date).getTime() < 7 * 86400000).length;
   const [modifierSchemas, setModifierSchemas] = useState(false);
   const [schemasModif, setSchemasModif] = useState(profil?.schemas || []);
+  const [budget, setBudget] = useState(getBudget());
+  const [editBudget, setEditBudget] = useState(false);
+  const [creditInput, setCreditInput] = useState(budget.creditInitial.toString());
 
   if (!profil) {
     navigate('/onboarding');
@@ -45,6 +49,61 @@ export default function Hub() {
               {profil.gad7.reduce((a, b) => a + Math.max(b, 0), 0)}<span style={{ fontSize: '1rem', color: 'var(--encre-3)' }}>/21</span>
             </div>
             <div style={{ color: 'var(--encre-2)', fontWeight: 700, fontSize: '0.9rem' }}>GAD-7 de départ</div>
+          </div>
+        </div>
+
+        {/* Carte Budget IA */}
+        <div className="carte" style={{ marginTop: '1.4rem', background: 'var(--bleu-pale)', borderLeft: '4px solid var(--bleu-nuit)' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '1rem' }}>
+            <div style={{ flex: 1 }}>
+              <h3 style={{ margin: '0 0 0.5rem' }}>💰 Crédit IA</h3>
+              <div style={{ display: 'grid', gap: '0.8rem', fontSize: '0.9rem' }}>
+                <div>
+                  <div style={{ color: 'var(--encre-3)' }}>Crédit initial</div>
+                  <div style={{ fontSize: '1.4rem', fontWeight: 700, color: 'var(--bleu-nuit)' }}>
+                    {formatBudget(budget).creditInitialFormatted}
+                  </div>
+                </div>
+                <div>
+                  <div style={{ color: 'var(--encre-3)' }}>Crédité utilisé</div>
+                  <div style={{ fontSize: '1.1rem', color: 'var(--crise)' }}>
+                    {formatBudget(budget).coutTotalFormatted}
+                  </div>
+                </div>
+                <div>
+                  <div style={{ color: 'var(--encre-3)' }}>Crédit restant</div>
+                  <div style={{ fontSize: '1.4rem', fontWeight: 700, color: 'var(--sauge)' }}>
+                    {formatBudget(budget).creditRestantFormatted}
+                  </div>
+                  <div style={{ 
+                    height: '6px', 
+                    background: '#EEE', 
+                    borderRadius: '3px', 
+                    marginTop: '0.5rem',
+                    overflow: 'hidden'
+                  }}>
+                    <div style={{
+                      height: '100%',
+                      background: formatBudget(budget).pourcentageUtilise > 80 ? 'var(--crise)' : 'var(--sauge)',
+                      width: `${Math.min(formatBudget(budget).pourcentageUtilise, 100)}%`,
+                      transition: 'width 0.3s',
+                    }} />
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div style={{ display: 'flex', gap: '0.5rem', marginTop: '1rem' }}>
+            <button className="btn btn-doux btn-sm" onClick={() => {
+              setCreditInput(budget.creditInitial.toString());
+              setEditBudget(true);
+            }}>
+              ✏️ Modifier crédit
+            </button>
+            <a href="https://console.anthropic.com/account/billing/overview" target="_blank" rel="noopener noreferrer"
+              className="btn btn-primaire btn-sm" style={{ textDecoration: 'none' }}>
+              💳 Recharger
+            </a>
           </div>
         </div>
 
@@ -115,6 +174,49 @@ export default function Hub() {
             </div>
           ))}
         </div>
+
+        {/* Modal édition crédit */}
+        {editBudget && (
+          <div style={{
+            position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+            background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center',
+            zIndex: 9998, padding: '1rem',
+          }} onClick={() => setEditBudget(false)}>
+            <div className="carte" style={{ maxWidth: 400, padding: '1.5rem' }}
+              onClick={e => e.stopPropagation()}>
+              <h3>Mettre à jour ton crédit IA</h3>
+              <p style={{ color: 'var(--encre-2)', fontSize: '0.9rem', marginBottom: '1rem' }}>
+                Entre le montant total de crédit que tu as acheté (en dollars).
+              </p>
+              <div style={{ marginBottom: '1rem' }}>
+                <label style={{ display: 'block', fontWeight: 600, marginBottom: '0.4rem' }}>
+                  Crédit initial ($)
+                </label>
+                <input type="number" value={creditInput} onChange={e => setCreditInput(e.target.value)}
+                  placeholder="5.00" step="0.01" min="0"
+                  style={{
+                    width: '100%', padding: '0.7rem', border: '1.5px solid #DDD5C7',
+                    borderRadius: 'var(--rayon-sm)', fontSize: '1rem', boxSizing: 'border-box',
+                  }} />
+              </div>
+              <div style={{ display: 'flex', gap: '0.5rem' }}>
+                <button className="btn btn-doux" onClick={() => setEditBudget(false)}>
+                  Annuler
+                </button>
+                <button className="btn btn-primaire" onClick={() => {
+                  const montant = parseFloat(creditInput);
+                  if (!isNaN(montant) && montant >= 0) {
+                    setCreditInitial(montant);
+                    setBudget(getBudget());
+                    setEditBudget(false);
+                  }
+                }}>
+                  Enregistrer
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Modal modification schémas */}
         {modifierSchemas && (

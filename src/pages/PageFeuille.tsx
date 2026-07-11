@@ -83,13 +83,13 @@ function Champ({ champ, valeur, onChange, imprimer }: {
       {'aide' in champ && champ.aide && <p className="aide">{champ.aide}</p>}
 
       {champ.type === 'texte' && (
-        <input type="text" value={(valeur as string) || ''} placeholder={champ.placeholder}
+        <input type="text" name={champ.id} value={(valeur as string) || ''} placeholder={champ.placeholder}
           onChange={e => onChange(e.target.value)} />
       )}
       {champ.type === 'zone' && (
         <>
           <div className="no-print" style={{ display: 'flex', gap: '0.5rem', alignItems: 'flex-start' }}>
-            <textarea style={{ flex: 1 }} value={(valeur as string) || ''} placeholder={champ.placeholder}
+            <textarea name={champ.id} style={{ flex: 1 }} value={(valeur as string) || ''} placeholder={champ.placeholder}
               onChange={e => onChange(e.target.value)} />
             <BoutonMicro onTexteDicte={t => onChange(((valeur as string) || '') + (valeur ? ' ' : '') + t)} />
           </div>
@@ -103,7 +103,7 @@ function Champ({ champ, valeur, onChange, imprimer }: {
             <span style={{ fontSize: '1.3rem', color: 'var(--sauge-fonce)' }}>{(valeur as number) ?? 50}</span>
             <span style={{ color: 'var(--encre-3)', fontSize: '0.85rem' }}>100 — maximum</span>
           </div>
-          <input type="range" min={0} max={100} value={(valeur as number) ?? 50}
+          <input name={champ.id} type="range" min={0} max={100} value={(valeur as number) ?? 50}
             onChange={e => onChange(Number(e.target.value))} className="no-print" />
           {imprimer && <div className="zone-ecriture-print" style={{ minHeight: 40 }} />}
         </div>
@@ -270,6 +270,41 @@ export default function PageFeuille() {
             <div className="no-print encart encart-info apparition" style={{ marginTop: '1rem', whiteSpace: 'pre-wrap' }}>
               <strong>💬 Retour de l'assistant TCC</strong>
               <div style={{ marginTop: '0.6rem' }}>{iaTexte}</div>
+              
+              {/* Bouton d'intégration selon la feuille */}
+              <button
+                className="btn btn-primaire btn-sm"
+                onClick={() => {
+                  let champCible = 'pensee_alternative'; // Défaut : BEC
+                  let texteIntegre = '';
+                  
+                  if (slug === 'bec') {
+                    champCible = 'pensee_alternative';
+                    const penseeAlt = (valeurs.pensee_alternative as string) || '';
+                    texteIntegre = penseeAlt 
+                      ? `${penseeAlt}. De plus, ${iaTexte.charAt(0).toLowerCase() + iaTexte.slice(1)}`
+                      : iaTexte;
+                  } else {
+                    // Pour les autres feuilles, on l'ajoute aux observations/notes générales
+                    champCible = 'observations';
+                    const obs = (valeurs.observations as string) || '';
+                    texteIntegre = obs 
+                      ? `${obs}\n\nAide de l'assistant : ${iaTexte}`
+                      : `Aide de l'assistant : ${iaTexte}`;
+                  }
+                  
+                  // Modifie le champ
+                  setValeurs({ ...valeurs, [champCible]: texteIntegre });
+                  
+                  // Scroll vers le champ modifié
+                  setTimeout(() => {
+                    document.querySelector(`[name="${champCible}"]`)?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                  }, 100);
+                }}
+                style={{ marginTop: '0.8rem', width: '100%' }}
+              >
+                ✨ Ajouter ce feedback à ma réponse
+              </button>
             </div>
           )}
         </div>

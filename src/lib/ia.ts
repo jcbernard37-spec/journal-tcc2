@@ -8,6 +8,8 @@
 const EST_LOCAL = typeof window !== 'undefined' &&
   (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
 
+import { enregistrerTokens } from './budget';
+
 export type TypeIA = 'feedback_bec' | 'feedback_arbre' | 'feedback_parking' | 'feedback_predictions' | 'feedback_schemas' | 'feedback_comportements' | 'feedback_decatastrophisation' | 'synthese' | 'psychoeducation' | 'compagnon';
 
 export interface MessageChat {
@@ -36,6 +38,12 @@ export async function demanderIA(type: TypeIA, contenu: string): Promise<{ ok: b
     }
 
     const data = await response.json();
+    
+    // Enregistre la consommation de tokens
+    if (data.tokens) {
+      enregistrerTokens(data.tokens);
+    }
+    
     return { ok: true, texte: data.reponse || '' };
   } catch {
     return { ok: false, texte: 'Impossible de joindre l\'IA. Vérifie ta connexion.' };
@@ -64,6 +72,12 @@ export async function converserAvecCompagnon(messages: MessageChat[]): Promise<{
     }
 
     const data = await response.json();
+    
+    // Enregistre la consommation de tokens
+    if (data.tokens) {
+      enregistrerTokens(data.tokens);
+    }
+    
     return { ok: true, texte: data.reponse || '' };
   } catch {
     return { ok: false, texte: 'Impossible de joindre l\'assistant. Vérifie ta connexion.' };
