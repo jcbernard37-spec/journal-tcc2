@@ -1,11 +1,29 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { SOS_ETAPES } from '../data/tcc';
+import { CoherenceCardiaque } from '../lib/CoherenceCardiaque';
 
 export default function SOS() {
   const navigate = useNavigate();
   const [etape, setEtape] = useState(0);
+  const [mode, setMode] = useState<'coherence' | 'guide'>('coherence');
   const derniere = etape >= SOS_ETAPES.length - 1;
+
+  if (mode === 'coherence') {
+    return (
+      <div className="page">
+        <div className="conteneur-etroit apparition" style={{ paddingTop: '2rem' }}>
+          <CoherenceCardiaque dureeSecondes={300} />
+          
+          <div style={{ display: 'flex', gap: '0.5rem', marginTop: '2rem', justifyContent: 'center' }}>
+            <button className="btn btn-doux" onClick={() => setMode('guide')}>
+              ← Voir le guide complet
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="page">
@@ -30,11 +48,16 @@ export default function SOS() {
             {etape > 0 && (
               <button className="btn btn-doux" onClick={() => setEtape(e => e - 1)}>← Précédente</button>
             )}
-            {!derniere ? (
+            {etape === 0 && (
+              <button className="btn btn-ambre" onClick={() => setMode('coherence')}>
+                🫁 Lancer la respiration guidée
+              </button>
+            )}
+            {!derniere && etape > 0 ? (
               <button className="btn btn-primaire" onClick={() => setEtape(e => e + 1)}>
                 C'est fait, étape suivante →
               </button>
-            ) : (
+            ) : etape > 0 ? (
               <>
                 <button className="btn btn-primaire" onClick={() => navigate('/feuille/parking')}>
                   Garer mon inquiétude 🅿️
@@ -43,7 +66,7 @@ export default function SOS() {
                   Passer à l'arbre actionnable 🌳
                 </button>
               </>
-            )}
+            ) : null}
           </div>
         </div>
 
