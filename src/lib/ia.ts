@@ -8,7 +8,12 @@
 const EST_LOCAL = typeof window !== 'undefined' &&
   (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
 
-export type TypeIA = 'feedback_bec' | 'synthese' | 'psychoeducation';
+export type TypeIA = 'feedback_bec' | 'synthese' | 'psychoeducation' | 'compagnon';
+
+export interface MessageChat {
+  role: 'user' | 'assistant';
+  content: string;
+}
 
 export async function demanderIA(type: TypeIA, contenu: string): Promise<{ ok: boolean; texte: string }> {
   if (EST_LOCAL) {
@@ -34,6 +39,34 @@ export async function demanderIA(type: TypeIA, contenu: string): Promise<{ ok: b
     return { ok: true, texte: data.reponse || '' };
   } catch {
     return { ok: false, texte: 'Impossible de joindre l\'IA. Vérifie ta connexion.' };
+  }
+}
+
+// ── Conversation avec le compagnon (garde l'historique) ──
+export async function converserAvecCompagnon(messages: MessageChat[]): Promise<{ ok: boolean; texte: string }> {
+  if (EST_LOCAL) {
+    return {
+      ok: false,
+      texte: 'L\'assistant fonctionne uniquement sur la version en ligne (journal-tcc2.vercel.app).',
+    };
+  }
+
+  try {
+    const response = await fetch('/api/feedback', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ type: 'compagnon', messages }),
+    });
+
+    if (!response.ok) {
+      const err = await response.json().catch(() => ({}));
+      return { ok: false, texte: err.error || 'Une erreur est survenue. Réessaie dans un instant.' };
+    }
+
+    const data = await response.json();
+    return { ok: true, texte: data.reponse || '' };
+  } catch {
+    return { ok: false, texte: 'Impossible de joindre l\'assistant. Vérifie ta connexion.' };
   }
 }
 

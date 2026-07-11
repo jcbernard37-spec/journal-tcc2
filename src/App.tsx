@@ -9,6 +9,7 @@ import PageFeuille from './pages/PageFeuille';
 import SOS from './pages/SOS';
 import Suivi from './pages/Suivi';
 import Sauvegarde from './pages/Sauvegarde';
+import Assistant from './pages/Assistant';
 
 function Nav() {
   return (
@@ -18,6 +19,7 @@ function Nav() {
         <div className="nav-liens">
           <NavLink to="/hub" className={({ isActive }) => 'nav-lien' + (isActive ? ' actif' : '')}>Tableau de bord</NavLink>
           <NavLink to="/feuilles" className={({ isActive }) => 'nav-lien' + (isActive ? ' actif' : '')}>Feuilles</NavLink>
+          <NavLink to="/assistant" className={({ isActive }) => 'nav-lien' + (isActive ? ' actif' : '')}>Assistant</NavLink>
           <NavLink to="/suivi" className={({ isActive }) => 'nav-lien' + (isActive ? ' actif' : '')}>Mon suivi</NavLink>
           <NavLink to="/sauvegarde" className={({ isActive }) => 'nav-lien' + (isActive ? ' actif' : '')}>Sauvegarde</NavLink>
           <Link to="/sos" className="nav-sos">SOS</Link>
@@ -48,6 +50,7 @@ export default function App() {
         <Route path="/hub" element={<Hub />} />
         <Route path="/feuilles" element={<FeuillesHub />} />
         <Route path="/feuille/:slug" element={<PageFeuille />} />
+        <Route path="/assistant" element={<Assistant />} />
         <Route path="/sos" element={<SOS />} />
         <Route path="/suivi" element={<Suivi />} />
         <Route path="/sauvegarde" element={<Sauvegarde />} />

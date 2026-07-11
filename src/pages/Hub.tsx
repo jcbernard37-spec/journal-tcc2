@@ -43,20 +43,20 @@ export default function Hub() {
 
         <h2 style={{ marginTop: '2.8rem' }}>Par où commencer aujourd'hui ?</h2>
         <div className="grille-2" style={{ marginTop: '1.2rem' }}>
+          <div className="carte fiche carte-clic" style={{ ['--fiche-couleur' as string]: '#C9835A' }}
+            onClick={() => navigate('/assistant')}>
+            <span className="etiquette etiquette-ambre">Nouveau · Guide</span>
+            <h3 style={{ margin: '0.7rem 0 0.3rem' }}>💬 Parler à l'assistant</h3>
+            <p style={{ color: 'var(--encre-2)', fontSize: '0.95rem' }}>
+              Tu ne sais pas par où commencer ? Dis-lui ce que tu ressens, il t'oriente vers le bon outil.
+            </p>
+          </div>
           <div className="carte fiche carte-clic" style={{ ['--fiche-couleur' as string]: '#4A7A6F' }}
             onClick={() => navigate('/feuille/bec')}>
             <span className="etiquette etiquette-sauge">Le classique</span>
             <h3 style={{ margin: '0.7rem 0 0.3rem' }}>📋 Journal de pensées (BEC)</h3>
             <p style={{ color: 'var(--encre-2)', fontSize: '0.95rem' }}>
               Une émotion forte aujourd'hui ? C'est ici qu'on la décortique.
-            </p>
-          </div>
-          <div className="carte fiche carte-clic" style={{ ['--fiche-couleur' as string]: '#B5544D' }}
-            onClick={() => navigate('/sos')}>
-            <span className="etiquette" style={{ background: 'var(--crise-pale)', color: 'var(--crise)' }}>Urgence douce</span>
-            <h3 style={{ margin: '0.7rem 0 0.3rem' }}>🆘 Ça tourne en boucle ?</h3>
-            <p style={{ color: 'var(--encre-2)', fontSize: '0.95rem' }}>
-              5 étapes guidées pour interrompre la rumination, avec respiration animée.
             </p>
           </div>
         </div>

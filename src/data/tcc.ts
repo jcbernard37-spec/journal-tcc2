@@ -56,14 +56,44 @@ export const DISTORSIONS = [
   { nom: 'Personnalisation', def: 'Tout ramener à soi, même ce qui ne nous concerne pas.', ex: '« Ils rient là-bas → c\'est sûrement de moi. »', questions: ['Quels autres facteurs existent dans LEUR vie ?', 'Quelle preuve ai-je que ça me concerne ?'] },
 ];
 
+// Les 18 schémas de Young, regroupés en 5 familles.
+// `famille` sert à les organiser visuellement dans l'app.
+export const FAMILLES_SCHEMAS = [
+  { id: 'rejet', nom: 'Séparation & rejet', besoin: 'Le besoin de sécurité affective, de lien stable et d\'acceptation.' },
+  { id: 'autonomie', nom: 'Manque d\'autonomie', besoin: 'Le besoin de se sentir capable, autonome et en sécurité dans le monde.' },
+  { id: 'limites', nom: 'Manque de limites', besoin: 'Le besoin de limites réalistes et de responsabilité envers les autres.' },
+  { id: 'autres', nom: 'Orientation vers les autres', besoin: 'Le besoin de tenir compte de ses propres besoins, pas seulement de ceux des autres.' },
+  { id: 'survigilance', nom: 'Survigilance & inhibition', besoin: 'Le besoin de spontanéité, de jeu et d\'expression de ses émotions.' },
+];
+
 export const SCHEMAS = [
-  { id: 'vulnerabilite', nom: 'Vulnérabilité au danger', croyance: '« Le monde est dangereux et je suis fragile. »', signes: 'Vigilance excessive, catastrophisation systématique, surprotection de soi et des proches.' },
-  { id: 'incompetence', nom: 'Incompétence', croyance: '« Je ne peux pas faire face aux défis. »', signes: 'Perfectionnisme, procrastination, besoin constant de validation.' },
-  { id: 'imperfection', nom: 'Imperfection / défaillance', croyance: '« Il y a quelque chose qui cloche chez moi. »', signes: 'Honte, culpabilité excessive, critique interne sévère.' },
-  { id: 'controle', nom: 'Manque de contrôle', croyance: '« Je ne contrôle pas ce qui m\'arrive. »', signes: 'Besoin de tout contrôler, vérifications répétées.' },
-  { id: 'incertitude', nom: 'Intolérance à l\'incertitude', croyance: '« Ne pas savoir est intolérable et dangereux. »', signes: 'Rumination, besoin d\'anticiper tous les scénarios, paralysie décisionnelle.' },
-  { id: 'abandon', nom: 'Abandon', croyance: '« Les gens que j\'aime vont finir par partir. »', signes: 'Peur du rejet, besoin de réassurance affective.' },
-  { id: 'sacrifice', nom: 'Assujettissement / sacrifice de soi', croyance: '« Mes besoins passent après ceux des autres. »', signes: 'Difficulté à dire non, épuisement, ressentiment silencieux.' },
+  // ── 1. Séparation & rejet ──
+  { id: 'abandon', famille: 'rejet', nom: 'Abandon / instabilité', croyance: '« Les gens que j\'aime vont finir par partir. »', signes: 'Peur du rejet, besoin de réassurance affective, angoisse quand un proche s\'éloigne.' },
+  { id: 'mefiance', famille: 'rejet', nom: 'Méfiance / abus', croyance: '« On va finir par me trahir ou me faire du mal. »', signes: 'Difficulté à faire confiance, vigilance envers les intentions des autres, sentiment d\'avoir été trahi.' },
+  { id: 'manque_affectif', famille: 'rejet', nom: 'Manque affectif (carence)', croyance: '« Mes besoins d\'affection ne seront jamais vraiment comblés. »', signes: 'Sentiment de vide, impression que personne ne comprend, difficulté à recevoir de la tendresse.' },
+  { id: 'imperfection', famille: 'rejet', nom: 'Imperfection / honte', croyance: '« Il y a quelque chose qui cloche en moi, je ne suis pas assez bien. »', signes: 'Honte, critique interne sévère, peur d\'être découvert « tel qu\'on est vraiment ».' },
+  { id: 'isolement', famille: 'rejet', nom: 'Isolement social', croyance: '« Je suis différent, à l\'écart, je n\'appartiens à aucun groupe. »', signes: 'Sentiment de ne pas être à sa place, retrait, impression d\'être un étranger partout.' },
+
+  // ── 2. Manque d'autonomie ──
+  { id: 'dependance', famille: 'autonomie', nom: 'Dépendance / incompétence', croyance: '« Je ne peux pas faire face seul, j\'ai besoin des autres pour y arriver. »', signes: 'Besoin constant de validation, difficulté à décider seul, sentiment d\'être dépassé.' },
+  { id: 'vulnerabilite', famille: 'autonomie', nom: 'Vulnérabilité au danger', croyance: '« Le monde est dangereux, une catastrophe peut arriver à tout moment. »', signes: 'Vigilance excessive, catastrophisation, surprotection de soi et des proches.' },
+  { id: 'fusion', famille: 'autonomie', nom: 'Fusion / personnalité atrophiée', croyance: '« Je n\'existe pas vraiment sans l\'autre, nos vies sont fondues. »', signes: 'Difficulté à se définir seul, sentiment de vide loin de l\'autre, identité mêlée à celle d\'un proche.' },
+  { id: 'echec', famille: 'autonomie', nom: 'Échec', croyance: '« Je vais échouer, je suis moins capable que les autres. »', signes: 'Anticipation de l\'échec, comparaison défavorable, sabotage, procrastination.' },
+
+  // ── 3. Manque de limites ──
+  { id: 'grandiosite', famille: 'limites', nom: 'Droits personnels exagérés', croyance: '« Les règles ordinaires ne devraient pas s\'appliquer à moi. »', signes: 'Impatience, difficulté avec les contraintes, sentiment d\'être spécial ou au-dessus.' },
+  { id: 'autocontrole', famille: 'limites', nom: 'Manque d\'autocontrôle', croyance: '« Je n\'arrive pas à me contenir ou à tenir mes engagements. »', signes: 'Impulsivité, difficulté à supporter la frustration, abandon des efforts qui demandent de la discipline.' },
+
+  // ── 4. Orientation vers les autres ──
+  { id: 'assujettissement', famille: 'autres', nom: 'Assujettissement', croyance: '« Je dois faire ce que les autres attendent, sinon il y aura un conflit ou un rejet. »', signes: 'Difficulté à dire non, à exprimer ses désirs, soumission pour éviter les tensions.' },
+  { id: 'sacrifice', famille: 'autres', nom: 'Sacrifice de soi', croyance: '« Mes besoins passent après ceux des autres ; je dois aider, soutenir, réparer. »', signes: 'Se dévouer au point de s\'épuiser, se sentir responsable du bien-être d\'autrui, ressentiment silencieux. C\'est le schéma du « sauveur ».' },
+  { id: 'approbation', famille: 'autres', nom: 'Recherche d\'approbation', croyance: '« Ma valeur dépend du regard et de la reconnaissance des autres. »', signes: 'Besoin de plaire, décisions guidées par l\'image renvoyée, sensibilité extrême à la critique.' },
+
+  // ── 5. Survigilance & inhibition ──
+  { id: 'negativite', famille: 'survigilance', nom: 'Négativité / pessimisme', croyance: '« Ça va forcément mal tourner, autant m\'y préparer. »', signes: 'Focalisation sur le négatif, inquiétude chronique, difficulté à savourer le positif.' },
+  { id: 'surcontrole', famille: 'survigilance', nom: 'Surcontrôle émotionnel', croyance: '« Je dois garder le contrôle, ne pas montrer ce que je ressens. »', signes: 'Émotions retenues, spontanéité bridée, peur de « lâcher » ou de perdre la maîtrise.' },
+  { id: 'ideaux', famille: 'survigilance', nom: 'Idéaux exigeants / perfectionnisme', croyance: '« Je dois être parfait et performant, sinon je ne vaux rien. »', signes: 'Perfectionnisme, autocritique, pression permanente, difficulté à se sentir « assez ».' },
+  { id: 'punition', famille: 'survigilance', nom: 'Punition', croyance: '« Les erreurs méritent d\'être punies — les miennes comme celles des autres. »', signes: 'Intolérance à l\'erreur, dureté envers soi, difficulté à pardonner et à nuancer.' },
 ];
 
 export const COMPORTEMENTS_SECURITE = [

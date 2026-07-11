@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { GAD7_QUESTIONS, interpretationGAD7, SCHEMAS } from '../data/tcc';
+import { GAD7_QUESTIONS, interpretationGAD7, SCHEMAS, FAMILLES_SCHEMAS } from '../data/tcc';
 import { stockage } from '../lib/storage';
 
 const OPTIONS_GAD7 = ['Jamais', 'Plusieurs jours', 'Plus de la moitié des jours', 'Presque tous les jours'];
@@ -94,31 +94,47 @@ export default function Onboarding() {
         {etape === 2 && (
           <div className="carte">
             <span className="etiquette etiquette-sauge">Étape 3 / 3</span>
-            <h2 style={{ margin: '0.8rem 0 0.4rem' }}>Tes schémas déjà identifiés</h2>
+            <h2 style={{ margin: '0.8rem 0 0.4rem' }}>Tes schémas de fond</h2>
             <p style={{ color: 'var(--encre-2)', marginBottom: '1.5rem' }}>
-              <strong>Optionnel.</strong> Si un travail avec un·e thérapeute a déjà mis en
-              lumière certains schémas, coche-les : la feuille « Mes schémas profonds »
-              s'appuiera dessus. Sinon, passe cette étape — tu pourras les découvrir en chemin.
+              <strong>Optionnel mais précieux.</strong> Les schémas sont des croyances anciennes
+              sur soi et le monde, à la racine de nos réactions. En voici 18, regroupés par
+              famille. Coche ceux qui résonnent (ceux que ta thérapeute a repérés, ou ceux qui
+              te parlent) : ton parcours et la feuille « Mes schémas profonds » s'appuieront
+              dessus. Tu pourras y revenir à tout moment.
             </p>
 
-            <div style={{ display: 'grid', gap: '0.6rem' }}>
-              {SCHEMAS.map(s => (
-                <button
-                  key={s.id} type="button"
-                  className="carte carte-clic"
-                  style={{
-                    padding: '0.9rem 1.1rem', textAlign: 'left',
-                    border: schemas.includes(s.id) ? '2px solid var(--sauge)' : '1px solid var(--lin-2)',
-                    background: schemas.includes(s.id) ? 'var(--sauge-pale)' : 'white',
-                    fontFamily: 'inherit', fontSize: '0.95rem', cursor: 'pointer',
-                  }}
-                  onClick={() => setSchemas(sc => sc.includes(s.id) ? sc.filter(x => x !== s.id) : [...sc, s.id])}
-                >
-                  <strong>{schemas.includes(s.id) ? '✓ ' : ''}{s.nom}</strong>
-                  <div style={{ color: 'var(--encre-2)', fontSize: '0.88rem' }}>{s.croyance}</div>
-                </button>
-              ))}
-            </div>
+            {FAMILLES_SCHEMAS.map(fam => (
+              <details key={fam.id} style={{ marginBottom: '0.8rem' }} open={fam.id === 'autres'}>
+                <summary style={{ cursor: 'pointer', fontWeight: 800, color: 'var(--sauge-fonce)', padding: '0.5rem 0', fontSize: '1.02rem' }}>
+                  {fam.nom}
+                </summary>
+                <p style={{ color: 'var(--encre-3)', fontSize: '0.85rem', margin: '0 0 0.6rem' }}>{fam.besoin}</p>
+                <div style={{ display: 'grid', gap: '0.5rem' }}>
+                  {SCHEMAS.filter(s => s.famille === fam.id).map(s => (
+                    <button
+                      key={s.id} type="button"
+                      className="carte carte-clic"
+                      style={{
+                        padding: '0.8rem 1rem', textAlign: 'left',
+                        border: schemas.includes(s.id) ? '2px solid var(--sauge)' : '1px solid var(--lin-2)',
+                        background: schemas.includes(s.id) ? 'var(--sauge-pale)' : 'white',
+                        fontFamily: 'inherit', fontSize: '0.92rem', cursor: 'pointer',
+                      }}
+                      onClick={() => setSchemas(sc => sc.includes(s.id) ? sc.filter(x => x !== s.id) : [...sc, s.id])}
+                    >
+                      <strong>{schemas.includes(s.id) ? '✓ ' : ''}{s.nom}</strong>
+                      <div style={{ color: 'var(--encre-2)', fontSize: '0.85rem' }}>{s.croyance}</div>
+                    </button>
+                  ))}
+                </div>
+              </details>
+            ))}
+
+            {schemas.length > 0 && (
+              <div className="encart encart-succes" style={{ marginTop: '1rem' }}>
+                {schemas.length} schéma{schemas.length > 1 ? 's' : ''} sélectionné{schemas.length > 1 ? 's' : ''}.
+              </div>
+            )}
 
             <div style={{ display: 'flex', gap: '0.7rem', marginTop: '1.5rem' }}>
               <button className="btn btn-doux" onClick={() => setEtape(1)}>← Retour</button>
