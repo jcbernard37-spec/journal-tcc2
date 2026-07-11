@@ -10,6 +10,7 @@ export default function Hub() {
   const entrees = stockage.getEntrees();
   const cetteSemaine = entrees.filter(e => Date.now() - new Date(e.date).getTime() < 7 * 86400000).length;
   const [modifierSchemas, setModifierSchemas] = useState(false);
+  const [schemasModif, setSchemasModif] = useState(profil?.schemas || []);
 
   if (!profil) {
     navigate('/onboarding');
@@ -72,7 +73,10 @@ export default function Hub() {
                 </div>
               </div>
             </div>
-            <button className="btn btn-doux btn-sm" onClick={() => setModifierSchemas(true)}
+            <button className="btn btn-doux btn-sm" onClick={() => {
+              setSchemasModif(profil?.schemas || []);
+              setModifierSchemas(true);
+            }}
               style={{ marginTop: '1rem' }}>
               ✏️ Modifier mes schémas
             </button>
@@ -134,12 +138,12 @@ export default function Hub() {
                     <div style={{ marginTop: '0.5rem', paddingLeft: '0.8rem', display: 'grid', gap: '0.4rem' }}>
                       {SCHEMAS.filter(s => s.famille === fam.id).map(s => (
                         <label key={s.id} style={{ display: 'flex', gap: '0.6rem', cursor: 'pointer', padding: '0.3rem 0' }}>
-                          <input type="checkbox" checked={(profil.schemas || []).includes(s.id)}
+                          <input type="checkbox" checked={schemasModif.includes(s.id)}
                             onChange={e => {
                               const newSchemas = e.target.checked
-                                ? [...(profil.schemas || []), s.id]
-                                : (profil.schemas || []).filter(x => x !== s.id);
-                              stockage.setProfil({ ...profil, schemas: newSchemas });
+                                ? [...schemasModif, s.id]
+                                : schemasModif.filter(x => x !== s.id);
+                              setSchemasModif(newSchemas);
                             }}
                             style={{ marginTop: '2px' }} />
                           <div style={{ flex: 1 }}>
@@ -156,7 +160,10 @@ export default function Hub() {
                 <button className="btn btn-doux" onClick={() => setModifierSchemas(false)}>
                   Fermer
                 </button>
-                <button className="btn btn-primaire" onClick={() => setModifierSchemas(false)}>
+                <button className="btn btn-primaire" onClick={() => {
+                  stockage.setProfil({ ...profil, schemas: schemasModif });
+                  setModifierSchemas(false);
+                }}>
                   Enregistré ✓
                 </button>
               </div>
