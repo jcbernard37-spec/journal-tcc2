@@ -275,27 +275,67 @@ export default function PageFeuille() {
               <button
                 className="btn btn-primaire btn-sm"
                 onClick={() => {
-                  let champCible = 'pensee_alternative'; // Défaut : BEC
-                  let texteIntegre = '';
+                  // Map chaque feuille à son champ cible optimal
+                  const champsCibles: Record<string, string> = {
+                    bec: 'pensee_alternative',
+                    actionnable: valeurs.verdict === '✅ Oui, c\'est actionnable' ? 'action' : 'lacher',
+                    predictions: 'lecon',
+                    parking: 'inquietude',
+                    schemas: 'reponse_adulte',
+                    securite: 'reduction',
+                    decatastrophisation: 'ressources',
+                    relations: 'comment_dire',
+                    coparentalite: 'petit_accord',
+                    estime: 'affirmation',
+                    crise: 'outils',
+                  };
+
+                  const champCible: string = (slug && champsCibles[slug]) || 'observations'; // Fallback
                   
+                  if (!champCible || !(champCible in valeurs)) {
+                    alert('⚠️ Champ cible non trouvé pour cette feuille. Feedback copié dans le presse-papiers.');
+                    navigator.clipboard.writeText(iaTexte);
+                    return;
+                  }
+
+                  let texteIntegre = '';
+                  const contenuActuel = (valeurs[champCible] as string) || '';
+
+                  // Fusion intelligente selon le champ
                   if (slug === 'bec') {
-                    champCible = 'pensee_alternative';
-                    const penseeAlt = (valeurs.pensee_alternative as string) || '';
-                    texteIntegre = penseeAlt 
-                      ? `${penseeAlt}. De plus, ${iaTexte.charAt(0).toLowerCase() + iaTexte.slice(1)}`
+                    texteIntegre = contenuActuel 
+                      ? `${contenuActuel}. De plus, ${iaTexte.charAt(0).toLowerCase() + iaTexte.slice(1)}`
+                      : iaTexte;
+                  } else if (slug === 'actionnable' && champCible === 'lacher') {
+                    texteIntegre = contenuActuel 
+                      ? `${contenuActuel} — Aide : ${iaTexte}`
+                      : `Aide : ${iaTexte}`;
+                  } else if (slug === 'predictions') {
+                    texteIntegre = contenuActuel 
+                      ? `${contenuActuel}. Observation supplémentaire : ${iaTexte}`
+                      : iaTexte;
+                  } else if (slug === 'relations') {
+                    texteIntegre = contenuActuel 
+                      ? `${contenuActuel}. Aide : ${iaTexte}`
+                      : iaTexte;
+                  } else if (slug === 'coparentalite') {
+                    texteIntegre = contenuActuel 
+                      ? `${contenuActuel} — Complément : ${iaTexte}`
+                      : iaTexte;
+                  } else if (slug === 'estime') {
+                    texteIntegre = contenuActuel 
+                      ? `${contenuActuel} — Et aussi : ${iaTexte}`
                       : iaTexte;
                   } else {
-                    // Pour les autres feuilles, on l'ajoute aux observations/notes générales
-                    champCible = 'observations';
-                    const obs = (valeurs.observations as string) || '';
-                    texteIntegre = obs 
-                      ? `${obs}\n\nAide de l'assistant : ${iaTexte}`
-                      : `Aide de l'assistant : ${iaTexte}`;
+                    // Pour les autres (schemas, decatastrophisation, securite, parking, crise)
+                    texteIntegre = contenuActuel 
+                      ? `${contenuActuel}\n\nAide : ${iaTexte}`
+                      : `Aide : ${iaTexte}`;
                   }
-                  
+
                   // Modifie le champ
                   setValeurs({ ...valeurs, [champCible]: texteIntegre });
-                  
+
                   // Scroll vers le champ modifié
                   setTimeout(() => {
                     document.querySelector(`[name="${champCible}"]`)?.scrollIntoView({ behavior: 'smooth', block: 'center' });
