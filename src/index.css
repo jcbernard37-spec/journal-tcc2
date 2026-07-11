@@ -238,4 +238,26 @@ input[type="range"]::-webkit-slider-thumb {
   .nav-mobile { display: flex !important; }
   .carte { padding: 1.25rem; }
 }
-.nav-mobile { display: none; gap: 0.4rem; }
+.nav-mobile { display: none; gap: 0.4rem; align-items: center; }
+
+.btn-burger {
+  background: none; border: none; font-size: 1.5rem; cursor: pointer;
+  padding: 0.5rem; color: var(--sauge-fonce); display: flex; align-items: center;
+}
+
+.nav-mobile-menu {
+  position: absolute; top: 100%; left: 0; right: 0;
+  background: rgba(250, 247, 242, 0.98); backdrop-filter: blur(10px);
+  border-bottom: 1px solid var(--lin-2);
+  padding: 0.8rem 1.25rem; display: flex; flex-direction: column; gap: 0.4rem;
+  z-index: 40;
+}
+
+.nav-lien-mobile {
+  display: block; padding: 0.8rem 0; text-decoration: none; color: var(--encre);
+  font-size: 0.95rem; border-bottom: 1px solid var(--lin-1);
+}
+
+.nav-lien-mobile:hover, .nav-lien-mobile.actif {
+  color: var(--sauge-fonce); font-weight: 600;
+}

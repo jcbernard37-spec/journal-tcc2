@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { BrowserRouter, Routes, Route, NavLink, Link, Navigate } from 'react-router-dom';
 import { initializeGoogleAuth } from './lib/google-drive';
 import Accueil from './pages/Accueil';
@@ -12,10 +12,12 @@ import Sauvegarde from './pages/Sauvegarde';
 import Assistant from './pages/Assistant';
 
 function Nav() {
+  const [menuOuvert, setMenuOuvert] = useState(false);
+
   return (
     <nav className="nav no-print">
       <div className="nav-inner">
-        <Link to="/" className="nav-marque">🌿 Journal TCC</Link>
+        <Link to="/" className="nav-marque" onClick={() => setMenuOuvert(false)}>🌿 Journal TCC</Link>
         <div className="nav-liens">
           <NavLink to="/hub" className={({ isActive }) => 'nav-lien' + (isActive ? ' actif' : '')}>Tableau de bord</NavLink>
           <NavLink to="/feuilles" className={({ isActive }) => 'nav-lien' + (isActive ? ' actif' : '')}>Feuilles</NavLink>
@@ -24,11 +26,29 @@ function Nav() {
           <NavLink to="/sauvegarde" className={({ isActive }) => 'nav-lien' + (isActive ? ' actif' : '')}>Sauvegarde</NavLink>
           <Link to="/sos" className="nav-sos">SOS</Link>
         </div>
+        {/* Menu mobile avec hamburger */}
         <div className="nav-mobile">
-          <Link to="/hub" className="nav-lien">Menu</Link>
+          <button 
+            className="btn-burger" 
+            onClick={() => setMenuOuvert(!menuOuvert)}
+            aria-label="Menu"
+          >
+            {menuOuvert ? '✕' : '☰'}
+          </button>
           <Link to="/sos" className="nav-sos">SOS</Link>
         </div>
       </div>
+      
+      {/* Menu déroulant mobile */}
+      {menuOuvert && (
+        <div className="nav-mobile-menu">
+          <NavLink to="/hub" className={({ isActive }) => 'nav-lien-mobile' + (isActive ? ' actif' : '')} onClick={() => setMenuOuvert(false)}>📊 Tableau de bord</NavLink>
+          <NavLink to="/feuilles" className={({ isActive }) => 'nav-lien-mobile' + (isActive ? ' actif' : '')} onClick={() => setMenuOuvert(false)}>📋 Feuilles</NavLink>
+          <NavLink to="/assistant" className={({ isActive }) => 'nav-lien-mobile' + (isActive ? ' actif' : '')} onClick={() => setMenuOuvert(false)}>💬 Assistant</NavLink>
+          <NavLink to="/suivi" className={({ isActive }) => 'nav-lien-mobile' + (isActive ? ' actif' : '')} onClick={() => setMenuOuvert(false)}>📖 Mon suivi</NavLink>
+          <NavLink to="/sauvegarde" className={({ isActive }) => 'nav-lien-mobile' + (isActive ? ' actif' : '')} onClick={() => setMenuOuvert(false)}>💾 Sauvegarde</NavLink>
+        </div>
+      )}
     </nav>
   );
 }
