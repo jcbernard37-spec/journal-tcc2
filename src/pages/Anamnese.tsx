@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import { stockage } from '../lib/storage';
+import { BoutonMicroAvance } from '../lib/BoutonMicroAvance';
 
 interface Anamnese {
   contexteActuel: string;
@@ -358,33 +359,44 @@ export default function Anamnese() {
               }}>
                 {champ.label}
               </label>
-              <textarea
-                ref={idx === 0 ? textareaRef : null}
-                value={anamnese[champ.id as keyof Anamnese] || ''}
-                onChange={e => handleChange(champ.id, e.target.value)}
-                placeholder={champ.placeholder}
-                style={{
-                  width: '100%',
-                  padding: '0.8rem 1rem',
-                  border: '1.5px solid #DDD5C7',
-                  borderRadius: 'var(--rayon-sm)',
-                  fontFamily: 'inherit',
-                  fontSize: isMobile ? '16px' : '1rem',
-                  minHeight: isMobile ? '160px' : '120px',
-                  resize: 'vertical',
-                  boxSizing: 'border-box',
-                  lineHeight: 1.5,
-                  WebkitAppearance: 'none',
-                  appearance: 'none',
-                }}
-                onFocus={e => {
-                  if (isMobile) {
-                    setTimeout(() => {
-                      e.target.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                    }, 300);
-                  }
-                }}
-              />
+              <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'flex-start' }}>
+                <textarea
+                  ref={idx === 0 ? textareaRef : null}
+                  value={anamnese[champ.id as keyof Anamnese] || ''}
+                  onChange={e => handleChange(champ.id, e.target.value)}
+                  placeholder={champ.placeholder}
+                  style={{
+                    flex: 1,
+                    padding: '0.8rem 1rem',
+                    border: '1.5px solid #DDD5C7',
+                    borderRadius: 'var(--rayon-sm)',
+                    fontFamily: 'inherit',
+                    fontSize: isMobile ? '16px' : '1rem',
+                    minHeight: isMobile ? '160px' : '120px',
+                    resize: 'vertical',
+                    boxSizing: 'border-box',
+                    lineHeight: 1.5,
+                    WebkitAppearance: 'none',
+                    appearance: 'none',
+                  }}
+                  onFocus={e => {
+                    if (isMobile) {
+                      setTimeout(() => {
+                        e.target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                      }, 300);
+                    }
+                  }}
+                />
+                <div style={{ paddingTop: '0.3rem' }}>
+                  <BoutonMicroAvance 
+                    onTexteDicte={(texte) => {
+                      const actuellement = anamnese[champ.id as keyof Anamnese] || '';
+                      const nouveau = actuellement ? `${actuellement} ${texte}` : texte;
+                      handleChange(champ.id, nouveau);
+                    }}
+                  />
+                </div>
+              </div>
             </div>
           ))}
         </div>
