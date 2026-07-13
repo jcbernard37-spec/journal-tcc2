@@ -156,9 +156,14 @@ export default async function handler(req, res) {
   }
 
   try {
-    const { type, contenu, messages } = req.body || {};
+    const { type, contenu, messages, profilIA } = req.body || {};
 
-    const systemPrompt = SYSTEM_PROMPTS[type] || SYSTEM_PROMPTS.feedback_bec;
+    let systemPrompt = SYSTEM_PROMPTS[type] || SYSTEM_PROMPTS.feedback_bec;
+    
+    // Injecter le profil IA dans le système prompt si disponible
+    if (profilIA && profilIA.trim()) {
+      systemPrompt = `${systemPrompt}\n\n${profilIA}`;
+    }
 
     // Soit une conversation (tableau messages), soit un message unique (contenu)
     const messagesToSend = Array.isArray(messages) && messages.length > 0

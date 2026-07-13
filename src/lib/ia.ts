@@ -9,6 +9,7 @@ const EST_LOCAL = typeof window !== 'undefined' &&
   (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
 
 import { enregistrerTokens } from './budget';
+import { genererProfilIA, formaterProfilPourIA } from './profilIA';
 
 export type TypeIA = 'feedback_bec' | 'feedback_arbre' | 'feedback_parking' | 'feedback_predictions' | 'feedback_schemas' | 'feedback_comportements' | 'feedback_decatastrophisation' | 'synthese' | 'psychoeducation' | 'compagnon';
 
@@ -26,10 +27,14 @@ export async function demanderIA(type: TypeIA, contenu: string): Promise<{ ok: b
   }
 
   try {
+    // Génère le profil IA basé sur l'historique
+    const profil = genererProfilIA();
+    const profilTexte = formaterProfilPourIA(profil);
+
     const response = await fetch('/api/feedback', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ type, contenu }),
+      body: JSON.stringify({ type, contenu, profilIA: profilTexte }),
     });
 
     if (!response.ok) {
@@ -60,10 +65,14 @@ export async function converserAvecCompagnon(messages: MessageChat[]): Promise<{
   }
 
   try {
+    // Génère le profil IA basé sur l'historique
+    const profil = genererProfilIA();
+    const profilTexte = formaterProfilPourIA(profil);
+
     const response = await fetch('/api/feedback', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ type: 'compagnon', messages }),
+      body: JSON.stringify({ type: 'compagnon', messages, profilIA: profilTexte }),
     });
 
     if (!response.ok) {

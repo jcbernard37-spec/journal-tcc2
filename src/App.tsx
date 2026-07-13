@@ -10,6 +10,7 @@ import SOS from './pages/SOS';
 import Suivi from './pages/Suivi';
 import Sauvegarde from './pages/Sauvegarde';
 import Assistant from './pages/Assistant';
+import Anamnese from './pages/Anamnese';
 
 function Nav() {
   const [menuOuvert, setMenuOuvert] = useState(false);
@@ -23,6 +24,7 @@ function Nav() {
           <NavLink to="/feuilles" className={({ isActive }) => 'nav-lien' + (isActive ? ' actif' : '')}>Feuilles</NavLink>
           <NavLink to="/assistant" className={({ isActive }) => 'nav-lien' + (isActive ? ' actif' : '')}>Assistant</NavLink>
           <NavLink to="/suivi" className={({ isActive }) => 'nav-lien' + (isActive ? ' actif' : '')}>Mon suivi</NavLink>
+          <NavLink to="/anamnese" className={({ isActive }) => 'nav-lien' + (isActive ? ' actif' : '')}>Mon histoire</NavLink>
           <NavLink to="/sauvegarde" className={({ isActive }) => 'nav-lien' + (isActive ? ' actif' : '')}>Sauvegarde</NavLink>
           <Link to="/sos" className="nav-sos">SOS</Link>
         </div>
@@ -46,6 +48,7 @@ function Nav() {
           <NavLink to="/feuilles" className={({ isActive }) => 'nav-lien-mobile' + (isActive ? ' actif' : '')} onClick={() => setMenuOuvert(false)}>📋 Feuilles</NavLink>
           <NavLink to="/assistant" className={({ isActive }) => 'nav-lien-mobile' + (isActive ? ' actif' : '')} onClick={() => setMenuOuvert(false)}>💬 Assistant</NavLink>
           <NavLink to="/suivi" className={({ isActive }) => 'nav-lien-mobile' + (isActive ? ' actif' : '')} onClick={() => setMenuOuvert(false)}>📖 Mon suivi</NavLink>
+          <NavLink to="/anamnese" className={({ isActive }) => 'nav-lien-mobile' + (isActive ? ' actif' : '')} onClick={() => setMenuOuvert(false)}>📚 Mon histoire</NavLink>
           <NavLink to="/sauvegarde" className={({ isActive }) => 'nav-lien-mobile' + (isActive ? ' actif' : '')} onClick={() => setMenuOuvert(false)}>💾 Sauvegarde</NavLink>
         </div>
       )}
@@ -71,6 +74,7 @@ export default function App() {
         <Route path="/feuilles" element={<FeuillesHub />} />
         <Route path="/feuille/:slug" element={<PageFeuille />} />
         <Route path="/assistant" element={<Assistant />} />
+        <Route path="/anamnese" element={<Anamnese />} />
         <Route path="/sos" element={<SOS />} />
         <Route path="/suivi" element={<Suivi />} />
         <Route path="/sauvegarde" element={<Sauvegarde />} />
