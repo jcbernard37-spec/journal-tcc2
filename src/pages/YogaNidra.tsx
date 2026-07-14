@@ -180,26 +180,22 @@ export default function YogaNidra() {
     setEnCours(true);
     setPhase('session');
 
-    // Démarre la musique zen en arrière-plan
+    // Musique + voix depuis le geste utilisateur (fix iOS)
     zenPlayer.play(volumeMusique);
+    jouerScriptGuidé(
+      script,
+      (index, _total) => setProgres(index),
+      () => {
+        setEnCours(false);
+        if (intervalRef.current) clearInterval(intervalRef.current);
+        zenPlayer.stop();
+        setPhase('apres');
+      }
+    );
 
-    // Lance la voix après 4 sec (laisse la musique s'installer)
     intervalRef.current = setInterval(() => {
       setTempsSession(t => t + 1);
     }, 1000);
-
-    setTimeout(() => {
-      jouerScriptGuidé(
-        script,
-        (index, total) => setProgres(index),
-        () => {
-          setEnCours(false);
-          if (intervalRef.current) clearInterval(intervalRef.current);
-          zenPlayer.stop();
-          setPhase('apres');
-        }
-      );
-    }, 4000);
   };
 
   const togglePause = () => {

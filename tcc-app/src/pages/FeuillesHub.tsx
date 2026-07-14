@@ -8,7 +8,7 @@ export default function FeuillesHub() {
   return (
     <div className="page">
       <div className="conteneur apparition" style={{ paddingTop: '2.2rem' }}>
-        <h1>Les 13 feuilles de travail</h1>
+        <h1>Les 10 feuilles de travail</h1>
         <p style={{ color: 'var(--encre-2)', marginTop: '0.4rem', maxWidth: 640 }}>
           Chaque feuille existe en deux versions : <strong>numérique</strong> (tu remplis à
           l'écran, tout est sauvegardé) et <strong>papier</strong> (un clic sur « Imprimer »

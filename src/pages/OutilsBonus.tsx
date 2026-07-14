@@ -131,22 +131,15 @@ export default function OutilsBonus() {
     setPhase('session');
     intervalRef.current = setInterval(() => setTempsSession(t => t + 1), 1000);
 
-    // Musique de fond pour méditation / affirmations / cohérence
+    // Musique + voix depuis le geste utilisateur (fix iOS)
     if (AVEC_MUSIQUE.includes(o)) {
       zenPlayer.play(0.35);
-      setTimeout(() => {
-        jouerScriptGuidé(cfg.script, (i) => setProgres(i), () => {
-          if (intervalRef.current) clearInterval(intervalRef.current);
-          zenPlayer.stop();
-          setPhase('apres');
-        });
-      }, 3000);
-    } else {
-      jouerScriptGuidé(cfg.script, (i) => setProgres(i), () => {
-        if (intervalRef.current) clearInterval(intervalRef.current);
-        setPhase('apres');
-      });
     }
+    jouerScriptGuidé(cfg.script, (i) => setProgres(i), () => {
+      if (intervalRef.current) clearInterval(intervalRef.current);
+      zenPlayer.stop();
+      setPhase('apres');
+    });
   };
 
   const togglePause = () => {

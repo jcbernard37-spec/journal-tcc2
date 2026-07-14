@@ -23,30 +23,16 @@ import OutilsBonus from './pages/OutilsBonus';
 
 type Theme = 'zen' | 'japon' | 'bouddha' | 'bambou';
 
-const THEMES: { id: Theme; label: string; emoji: string; classe: string; desc: string }[] = [
-  { id: 'zen',     label: 'Zen',     emoji: '🌿', classe: 'theme-btn-zen',     desc: 'Cabinet chaleureux' },
-  { id: 'japon',   label: 'Japon',   emoji: '🪨', classe: 'theme-btn-japon',   desc: 'Jardin zen' },
-  { id: 'bouddha', label: 'Bouddha', emoji: '🌿', classe: 'theme-btn-bouddha', desc: 'Forêt sacrée' },
-  { id: 'bambou',  label: 'Nuit',    emoji: '🕯️', classe: 'theme-btn-bambou',  desc: 'Bambou & bougies' },
+const THEMES: { id: Theme; label: string; classe: string; desc: string }[] = [
+  { id: 'zen',     label: 'Zen',     classe: 'theme-btn-zen',     desc: 'Cabinet chaleureux' },
+  { id: 'japon',   label: 'Japon',   classe: 'theme-btn-japon',   desc: 'Jardin zen' },
+  { id: 'bouddha', label: 'Bouddha', classe: 'theme-btn-bouddha', desc: 'Forêt sacrée' },
+  { id: 'bambou',  label: 'Nuit',    classe: 'theme-btn-bambou',  desc: 'Bambou & bougies' },
 ];
 
-function useTheme() {
-  const [theme, setTheme] = useState<Theme>(() => {
-    return (localStorage.getItem('tcc_theme') as Theme) || 'zen';
-  });
-
-  useEffect(() => {
-    document.documentElement.setAttribute('data-theme', theme);
-    localStorage.setItem('tcc_theme', theme);
-  }, [theme]);
-
-  return { theme, setTheme };
-}
-
-function Nav() {
+// ── Nav reçoit theme + setTheme du parent ──────────────────────────────────
+function Nav({ theme, setTheme }: { theme: Theme; setTheme: (t: Theme) => void }) {
   const [menuOuvert, setMenuOuvert] = useState(false);
-  const { theme, setTheme } = useTheme();
-
   const fermer = () => setMenuOuvert(false);
 
   return (
@@ -66,15 +52,11 @@ function Nav() {
           <Link to="/sos" className="nav-sos">SOS</Link>
 
           {/* Sélecteur de thème */}
-          <div className="theme-selector" title="Changer de thème">
+          <div className="theme-selector">
             {THEMES.map(t => (
-              <button
-                key={t.id}
-                onClick={() => setTheme(t.id)}
+              <button key={t.id} onClick={() => setTheme(t.id)}
                 className={`theme-btn ${t.classe} ${theme === t.id ? 'actif' : ''}`}
-                title={`${t.label} — ${t.desc}`}
-                aria-label={t.label}
-              />
+                title={`${t.label} — ${t.desc}`} aria-label={t.label} />
             ))}
           </div>
         </div>
@@ -88,7 +70,6 @@ function Nav() {
         </div>
       </div>
 
-      {/* Menu mobile déroulant */}
       {menuOuvert && (
         <div className="nav-mobile-menu">
           <NavLink to="/hub"                   className={({ isActive }) => 'nav-lien-mobile' + (isActive ? ' actif' : '')} onClick={fermer}>📊 Tableau de bord</NavLink>
@@ -99,17 +80,12 @@ function Nav() {
           <NavLink to="/anamnese"              className={({ isActive }) => 'nav-lien-mobile' + (isActive ? ' actif' : '')} onClick={fermer}>📚 Mon histoire</NavLink>
           <NavLink to="/sauvegarde"            className={({ isActive }) => 'nav-lien-mobile' + (isActive ? ' actif' : '')} onClick={fermer}>💾 Sauvegarde</NavLink>
 
-          {/* Thèmes mobile */}
           <div className="theme-selector-mobile">
             <span>Ambiance :</span>
             {THEMES.map(t => (
-              <button
-                key={t.id}
-                onClick={() => setTheme(t.id)}
+              <button key={t.id} onClick={() => setTheme(t.id)}
                 className={`theme-btn-lg ${t.id} ${theme === t.id ? 'actif' : ''}`}
-                title={`${t.label} — ${t.desc}`}
-                aria-label={t.label}
-              />
+                title={t.label} aria-label={t.label} />
             ))}
           </div>
         </div>
@@ -118,12 +94,23 @@ function Nav() {
   );
 }
 
+// ── App : source unique du thème ───────────────────────────────────────────
 function App() {
-  const { theme } = useTheme();
+  const [theme, setThemeState] = useState<Theme>(() => {
+    return (localStorage.getItem('tcc_theme') as Theme) || 'zen';
+  });
+
+  // Applique le thème sur <html> dès que ça change
+  useEffect(() => {
+    document.documentElement.setAttribute('data-theme', theme);
+    localStorage.setItem('tcc_theme', theme);
+  }, [theme]);
+
+  const setTheme = (t: Theme) => setThemeState(t);
 
   return (
     <BrowserRouter>
-      <Nav />
+      <Nav theme={theme} setTheme={setTheme} />
       <Routes>
         <Route path="/"                       element={<Accueil />} />
         <Route path="/onboarding"             element={<Onboarding />} />

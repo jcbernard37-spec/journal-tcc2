@@ -115,15 +115,13 @@ export default function Hypnose() {
     setPhase('session');
     intervalRef.current = setInterval(() => setTempsSession(t => t + 1), 1000);
 
-    // Musique douce en fond, voix après 3 sec
+    // Musique + voix depuis le geste utilisateur (fix iOS)
     zenPlayer.play(0.3);
-    setTimeout(() => {
-      jouerScriptGuidé(script, (i) => setProgres(i), () => {
-        if (intervalRef.current) clearInterval(intervalRef.current);
-        zenPlayer.stop();
-        setPhase('apres');
-      });
-    }, 3000);
+    jouerScriptGuidé(script, (i) => setProgres(i), () => {
+      if (intervalRef.current) clearInterval(intervalRef.current);
+      zenPlayer.stop();
+      setPhase('apres');
+    });
   };
 
   const togglePause = () => {

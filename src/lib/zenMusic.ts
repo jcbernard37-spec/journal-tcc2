@@ -1,222 +1,176 @@
 /**
- * Zen Music Generator — Web Audio API pure
- * Génère en temps réel : drone harmonique + rivière + bols tibétains
- * Zéro fichier audio externe, zéro dépendance.
+ * ZenMusic v2 — Sons vraiement relaxants
+ *
+ * V1 utilisait du "brown noise" qui produisait des bruits parasites.
+ * V2 utilise uniquement des oscillateurs sinus (pure sine) avec :
+ *   - Accord Am (La mineur) : harmonieux et mélancolique
+ *   - LFO sur l'amplitude (respiration lente), pas sur la fréquence
+ *   - Reverb simulée (delay + feedback)
+ *   - Bols tibétains avec vraies harmoniques (ratios 1 : 2.756 : 5.404)
  */
 
 export class ZenMusicPlayer {
-  private ctx: AudioContext | null = null;
-  private masterGain: GainNode | null = null;
+  private ctx:      AudioContext | null = null;
+  private master:   GainNode    | null = null;
+  private delayL:   DelayNode   | null = null;
+  private delayR:   DelayNode   | null = null;
+  private fbGain:   GainNode    | null = null;
   private actif = false;
+  private oscs:   OscillatorNode[] = [];
+  private gains:  GainNode[]      = [];
   private timers: ReturnType<typeof setTimeout>[] = [];
-  private nodes: AudioNode[] = [];
 
+  // ── init AudioContext (doit être appelé depuis un geste utilisateur) ─────
   private init() {
     if (this.ctx) return;
     const AC = window.AudioContext || (window as any).webkitAudioContext;
     if (!AC) return;
-    this.ctx = new AC();
-    this.masterGain = this.ctx.createGain();
-    this.masterGain.gain.value = 0;
-    this.masterGain.connect(this.ctx.destination);
+    this.ctx  = new AC();
+    this.master = this.ctx.createGain();
+    this.master.gain.value = 0;
+
+    // Reverb minimal : deux lignes de délai croisées
+    this.delayL = this.ctx.createDelay(1);
+    this.delayR = this.ctx.createDelay(1);
+    this.delayL.delayTime.value = 0.12;
+    this.delayR.delayTime.value = 0.17;
+
+    this.fbGain = this.ctx.createGain();
+    this.fbGain.gain.value = 0.22;
+
+    this.master.connect(this.delayL);
+    this.delayL.connect(this.delayR);
+    this.delayR.connect(this.fbGain);
+    this.fbGain.connect(this.delayL);   // boucle de feedback
+
+    const wetGain = this.ctx.createGain();
+    wetGain.gain.value = 0.28;
+    this.delayR.connect(wetGain);
+    wetGain.connect(this.ctx.destination);
+
+    this.master.connect(this.ctx.destination);
   }
 
-  /** Démarre la musique avec un fade-in progressif */
-  play(volume = 0.45) {
+  // ── API publique ──────────────────────────────────────────────────────────
+  play(volume = 0.38) {
     this.init();
-    if (!this.ctx || !this.masterGain) return;
+    if (!this.ctx || !this.master) return;
     if (this.ctx.state === 'suspended') this.ctx.resume();
     this.actif = true;
 
-    this.createDrone();
-    this.createRiviere();
+    this.buildAmPad();
 
-    // Fade-in 4 secondes
+    // Fade-in doux 5 secondes
     const now = this.ctx.currentTime;
-    this.masterGain.gain.setValueAtTime(0, now);
-    this.masterGain.gain.linearRampToValueAtTime(volume, now + 4);
+    this.master.gain.setValueAtTime(0, now);
+    this.master.gain.linearRampToValueAtTime(volume, now + 5);
 
-    // Premier bol après 5 secondes, puis périodiquement
-    const t0 = setTimeout(() => this.programmeBols(), 5000);
-    this.timers.push(t0);
+    // Premier bol après 7 secondes
+    this.timers.push(setTimeout(() => this.scheduleBol(), 7000));
   }
 
-  /** Arrête avec un fade-out */
   stop() {
-    if (!this.ctx || !this.masterGain) return;
     this.actif = false;
-
-    const now = this.ctx.currentTime;
-    this.masterGain.gain.setValueAtTime(this.masterGain.gain.value, now);
-    this.masterGain.gain.linearRampToValueAtTime(0, now + 3);
-
     this.timers.forEach(t => clearTimeout(t));
     this.timers = [];
 
+    if (this.ctx && this.master) {
+      const now = this.ctx.currentTime;
+      this.master.gain.setValueAtTime(this.master.gain.value, now);
+      this.master.gain.linearRampToValueAtTime(0, now + 3);
+    }
+
     setTimeout(() => {
-      this.nodes.forEach(n => {
-        try { (n as OscillatorNode).stop?.(); } catch (_) {}
-        try { n.disconnect(); } catch (_) {}
-      });
-      this.nodes = [];
+      this.oscs.forEach(o  => { try { o.stop(); o.disconnect(); } catch (_) {} });
+      this.gains.forEach(g => { try { g.disconnect(); }           catch (_) {} });
+      this.oscs  = [];
+      this.gains = [];
     }, 3500);
   }
 
   setVolume(v: number) {
-    if (!this.masterGain || !this.ctx) return;
-    this.masterGain.gain.linearRampToValueAtTime(
+    if (!this.master || !this.ctx) return;
+    this.master.gain.linearRampToValueAtTime(
       Math.max(0, Math.min(1, v)),
-      this.ctx.currentTime + 0.5
+      this.ctx.currentTime + 0.4
     );
   }
 
   estActif() { return this.actif; }
 
-  /**
-   * Drone harmonique zen
-   * Accord de quinte : 110 Hz (La2) + 165 Hz (Mi3) + 220 Hz (La3)
-   * Son continu très doux, comme un orchestre lointain.
-   */
-  private createDrone() {
-    if (!this.ctx || !this.masterGain) return;
+  // ── Pad harmonique Am ─────────────────────────────────────────────────────
+  // La(110) + Mi(164.8) + La(220) + Do(261.6) = accord La mineur
+  private buildAmPad() {
+    if (!this.ctx || !this.master) return;
 
-    const layers: [number, number, OscillatorType][] = [
-      [110, 0.14, 'sine'],
-      [165, 0.08, 'sine'],
-      [220, 0.06, 'sine'],
-      [55,  0.05, 'sine'], // sub-grave très doux
+    const voix: { f: number; amp: number; lfoHz: number }[] = [
+      { f: 110.0,  amp: 0.16, lfoHz: 0.06 },   // La2 — basse
+      { f: 164.8,  amp: 0.09, lfoHz: 0.04 },   // Mi3 — quinte
+      { f: 220.0,  amp: 0.07, lfoHz: 0.08 },   // La3 — octave
+      { f: 261.6,  amp: 0.04, lfoHz: 0.05 },   // Do4 — tierce mineure (très doux)
     ];
 
-    layers.forEach(([freq, vol, type]) => {
-      const osc = this.ctx!.createOscillator();
-      const gain = this.ctx!.createGain();
+    voix.forEach(({ f, amp, lfoHz }) => {
+      if (!this.ctx || !this.master) return;
 
-      // LFO très lent pour variation vivante (respiration de la musique)
-      const lfo = this.ctx!.createOscillator();
-      const lfoGain = this.ctx!.createGain();
-      lfo.frequency.value = 0.07 + Math.random() * 0.06;
-      lfoGain.gain.value = freq * 0.003; // variation très subtile
+      const osc  = this.ctx.createOscillator();
+      const gain = this.ctx.createGain();
+
+      // LFO d'amplitude (pas de fréquence — évite le vibrato artificiel)
+      const lfo     = this.ctx.createOscillator();
+      const lfoGain = this.ctx.createGain();
+      lfo.frequency.value = lfoHz;
+      lfoGain.gain.value  = amp * 0.35;   // profondeur de modulation
       lfo.connect(lfoGain);
-      lfoGain.connect(osc.frequency);
+      lfoGain.connect(gain.gain);         // module le volume, pas le pitch
       lfo.start();
 
-      osc.type = type;
-      osc.frequency.value = freq;
-      gain.gain.value = vol;
+      osc.type           = 'sine';
+      osc.frequency.value = f;
+      gain.gain.value    = amp;
       osc.connect(gain);
-      gain.connect(this.masterGain!);
+      gain.connect(this.master);
       osc.start();
 
-      this.nodes.push(osc, gain, lfo, lfoGain);
+      this.oscs.push(osc, lfo);
+      this.gains.push(gain, lfoGain);
     });
   }
 
-  /**
-   * Son de rivière / eau courante
-   * Brown noise filtré = bruit d'eau naturel et apaisant.
-   */
-  private createRiviere() {
-    if (!this.ctx || !this.masterGain) return;
+  // ── Bol tibétain ─────────────────────────────────────────────────────────
+  // Harmoniques réelles d'un bol : 1x, 2.756x, 5.404x la fondamentale
+  private jouerBol() {
+    if (!this.ctx || !this.master) return;
+    const freqs = [432, 528, 396, 384];
+    const f0    = freqs[Math.floor(Math.random() * freqs.length)];
+    const now   = this.ctx.currentTime;
 
-    // Buffer de bruit brun (random walk)
-    const sampleRate = this.ctx.sampleRate;
-    const buffer = this.ctx.createBuffer(2, sampleRate * 4, sampleRate);
-
-    for (let ch = 0; ch < 2; ch++) {
-      const data = buffer.getChannelData(ch);
-      let last = 0;
-      for (let i = 0; i < data.length; i++) {
-        const white = Math.random() * 2 - 1;
-        data[i] = (last + 0.02 * white) / 1.02;
-        last = data[i];
-        data[i] *= 3.5;
-      }
-    }
-
-    const source = this.ctx.createBufferSource();
-    source.buffer = buffer;
-    source.loop = true;
-
-    // Filtre passe-bas pour adoucir (coupe les fréquences agressives)
-    const filtre = this.ctx.createBiquadFilter();
-    filtre.type = 'lowpass';
-    filtre.frequency.value = 700;
-    filtre.Q.value = 0.5;
-
-    // Filtre passe-haut pour retirer les graves excessifs
-    const filtreHP = this.ctx.createBiquadFilter();
-    filtreHP.type = 'highpass';
-    filtreHP.frequency.value = 80;
-
-    const gain = this.ctx.createGain();
-    gain.gain.value = 0.08;
-
-    source.connect(filtre);
-    filtre.connect(filtreHP);
-    filtreHP.connect(gain);
-    gain.connect(this.masterGain);
-    source.start();
-
-    this.nodes.push(source, filtre, filtreHP, gain);
-  }
-
-  /**
-   * Bol tibétain
-   * Son pur à 432 Hz avec harmoniques + résonance longue.
-   */
-  private jouerBol(frequence = 432) {
-    if (!this.ctx || !this.masterGain || !this.actif) return;
-    const now = this.ctx.currentTime;
-
-    // Fréquence fondamentale + harmoniques naturelles
-    const harmoniques: [number, number][] = [
-      [frequence, 0.22],
-      [frequence * 2, 0.10],
-      [frequence * 3.01, 0.05], // légèrement désaccordé = plus naturel
-      [frequence * 4.03, 0.03],
-    ];
-
-    harmoniques.forEach(([freq, amp]) => {
-      const osc = this.ctx!.createOscillator();
-      const gain = this.ctx!.createGain();
-
-      osc.type = 'sine';
-      osc.frequency.value = freq;
-
-      // Enveloppe : attaque rapide, longue résonance
-      gain.gain.setValueAtTime(0, now);
+    [[f0, 0.22], [f0 * 2.756, 0.09], [f0 * 5.404, 0.04]].forEach(([f, amp]) => {
+      if (!this.ctx || !this.master) return;
+      const osc  = this.ctx.createOscillator();
+      const gain = this.ctx.createGain();
+      osc.type            = 'sine';
+      osc.frequency.value = f;
+      gain.gain.setValueAtTime(0,    now);
       gain.gain.linearRampToValueAtTime(amp, now + 0.04);
-      gain.gain.exponentialRampToValueAtTime(0.001, now + 6);
-
+      gain.gain.exponentialRampToValueAtTime(0.001, now + 8);
       osc.connect(gain);
-      gain.connect(this.masterGain!);
+      gain.connect(this.master);
       osc.start(now);
-      osc.stop(now + 7);
+      osc.stop(now + 8.5);
     });
   }
 
-  /**
-   * Programme les bols à intervalles aléatoires (25–45 secondes)
-   * pour un effet naturel et non-répétitif.
-   */
-  private programmeBols() {
+  private scheduleBol() {
     if (!this.actif) return;
-
-    // Fréquences de bols variées
-    const freqs = [432, 528, 396, 369];
-    const freq = freqs[Math.floor(Math.random() * freqs.length)];
-    this.jouerBol(freq);
-
-    const prochainBol = 25000 + Math.random() * 20000; // 25–45 sec
-    const t = setTimeout(() => this.programmeBols(), prochainBol);
-    this.timers.push(t);
+    this.jouerBol();
+    const next = 28000 + Math.random() * 22000;   // 28–50 s
+    this.timers.push(setTimeout(() => this.scheduleBol(), next));
   }
 }
 
-// Instance singleton partagée
-let playerInstance: ZenMusicPlayer | null = null;
-
+let _instance: ZenMusicPlayer | null = null;
 export function getZenPlayer(): ZenMusicPlayer {
-  if (!playerInstance) playerInstance = new ZenMusicPlayer();
-  return playerInstance;
+  if (!_instance) _instance = new ZenMusicPlayer();
+  return _instance;
 }
