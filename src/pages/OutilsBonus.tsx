@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { jouerScriptGuidé, arreter, mettreEnPause, reprendre } from '../lib/voiceGuide';
 import { getZenPlayer } from '../lib/zenMusic';
+import SOSFlottant from '../lib/SOSFlottant';
 
 type Outil = 'tapping' | 'coherence' | 'meditation' | 'affirmations';
 
@@ -116,6 +117,7 @@ export default function OutilsBonus() {
   const [progres, setProgres] = useState(0);
   const [total, setTotal] = useState(0);
   const [tempsSession, setTempsSession] = useState(0);
+  const [texteActuel, setTexteActuel] = useState('');
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const zenPlayer = getZenPlayer();
@@ -135,7 +137,7 @@ export default function OutilsBonus() {
     if (AVEC_MUSIQUE.includes(o)) {
       zenPlayer.play(0.35);
     }
-    jouerScriptGuidé(cfg.script, (i) => setProgres(i), () => {
+    jouerScriptGuidé(cfg.script, (i, _t, txt) => { setProgres(i); if (txt) setTexteActuel(txt); }, () => {
       if (intervalRef.current) clearInterval(intervalRef.current);
       zenPlayer.stop();
       setPhase('apres');
@@ -244,6 +246,7 @@ export default function OutilsBonus() {
           </div>
         )}
       </div>
+    <SOSFlottant />
     </div>
   );
 }

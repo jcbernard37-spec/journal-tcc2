@@ -399,3 +399,46 @@ label { display: block; font-weight: 700; margin-bottom: 0.4rem; color: var(--en
 .animate-glow   { animation: glow 3s ease-in-out infinite; }
 .animate-float  { animation: float 4s ease-in-out infinite; }
 .animate-fadein { animation: fadeIn 0.4s ease both; }
+
+/* ═══ CORRECTIFS THÈME BAMBOU (dark mode) ═══════════════════════════════════ */
+/* Le gold (#E8C840) est trop clair pour du texte blanc → forcer texte sombre */
+[data-theme="bambou"] .btn-principal,
+[data-theme="bambou"] button[style*="background: #E8C840"],
+[data-theme="bambou"] button[style*="background:#E8C840"] {
+  color: #1A2E16 !important;
+}
+
+/* Override cartes qui ont des couleurs hardcodées en inline style */
+[data-theme="bambou"] .zen-card,
+[data-theme="bambou"] .carte,
+[data-theme="bambou"] .carte-feuille {
+  background: var(--carte-bg) !important;
+  border-color: var(--carte-border) !important;
+  color: var(--encre) !important;
+}
+
+/* Forcer le fond body en dark pour les pages sans classe .page */
+[data-theme="bambou"] body,
+[data-theme="bambou"] #root {
+  background: var(--bg);
+}
+
+/* ═══ FOOTER DISCLAIMER ═══════════════════════════════════════════════════════ */
+.disclaimer-footer {
+  text-align: center;
+  padding: 2rem 1rem 1rem;
+  font-size: 0.78rem;
+  color: var(--encre-3);
+  border-top: 1px solid var(--carte-border);
+  margin-top: 3rem;
+  max-width: 600px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+/* ═══ BOUTON SOS FLOTTANT ══════════════════════════════════════════════════════ */
+/* Zone de clic étendue sans augmenter la taille visuelle */
+.btn-sos-flottant {
+  min-width: 60px;
+  min-height: 44px;
+}

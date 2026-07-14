@@ -52,7 +52,8 @@ function Nav({ theme, setTheme }: { theme: Theme; setTheme: (t: Theme) => void }
           <Link to="/sos" className="nav-sos">SOS</Link>
 
           {/* Sélecteur de thème */}
-          <div className="theme-selector">
+          <div className="theme-selector" title="Changer l'ambiance visuelle" aria-label="Thème">
+            <span style={{ fontSize: "0.75rem", color: "var(--encre-3)", fontWeight: 600 }}>Thème</span>
             {THEMES.map(t => (
               <button key={t.id} onClick={() => setTheme(t.id)}
                 className={`theme-btn ${t.classe} ${theme === t.id ? 'actif' : ''}`}

@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { jouerScriptGuidé, arreter, mettreEnPause, reprendre } from '../lib/voiceGuide';
 import { getZenPlayer } from '../lib/zenMusic';
+import SOSFlottant from '../lib/SOSFlottant';
 
 type Duree = 'court' | 'moyen' | 'long';
 
@@ -154,6 +155,7 @@ export default function YogaNidra() {
   const [progres, setProgres] = useState(0);
   const [totalSegments, setTotalSegments] = useState(0);
   const [tempsSession, setTempsSession] = useState(0);
+  const [texteActuel, setTexteActuel] = useState('');
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const options = {
@@ -184,7 +186,7 @@ export default function YogaNidra() {
     zenPlayer.play(volumeMusique);
     jouerScriptGuidé(
       script,
-      (index, _total) => setProgres(index),
+      (index, _total, texte) => { setProgres(index); if (texte) setTexteActuel(texte); },
       () => {
         setEnCours(false);
         if (intervalRef.current) clearInterval(intervalRef.current);
@@ -365,6 +367,23 @@ export default function YogaNidra() {
               {enPauseEtat ? '⏸ En pause' : '🎵 Musique zen  ·  🎙️ Voix guidée'}
             </p>
 
+            {/* Texte courant visible */}
+            {texteActuel && !enPauseEtat && (
+              <div style={{
+                background: 'var(--accent-pale)',
+                borderRadius: '10px',
+                padding: '0.9rem 1.1rem',
+                marginBottom: '1.25rem',
+                color: 'var(--accent-fonce)',
+                fontSize: '0.9rem',
+                lineHeight: 1.5,
+                fontStyle: 'italic',
+                textAlign: 'center',
+              }}>
+                「{texteActuel}」
+              </div>
+            )}
+
             <div style={{ maxWidth: 260, margin: '0 auto 1.5rem' }}>
               <label style={{ fontSize: '0.8rem', color: 'var(--encre-3)', display: 'flex', justifyContent: 'space-between', marginBottom: '0.3rem' }}>
                 <span>🎵 Musique</span>
@@ -424,6 +443,7 @@ export default function YogaNidra() {
           50% { transform: scale(1.12); opacity: 1; }
         }
       `}</style>
+      <SOSFlottant />
     </div>
   );
 }

@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { jouerScriptGuidé, arreter, mettreEnPause, reprendre } from '../lib/voiceGuide';
 import { getZenPlayer } from '../lib/zenMusic';
+import SOSFlottant from '../lib/SOSFlottant';
 
 type VisuType = 'abondance' | 'guerison' | 'enfant' | 'ressources' | 'safe' | 'dialogue';
 
@@ -161,6 +162,7 @@ export default function Visualisations() {
   const [tempsMin,    setTempsMin]    = useState(0);
   const [ressenti,    setRessenti]    = useState(7);
   const [volMusique,  setVolMusique]  = useState(0.35);
+  const [texteActuel, setTexteActuel] = useState('');
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const zenPlayer   = getZenPlayer();
 
@@ -185,7 +187,7 @@ export default function Visualisations() {
     // 2. Voix immédiatement — PAS de setTimeout (fix iOS critique)
     jouerScriptGuidé(
       script,
-      (i) => setProgres(i),
+      (i, _t, txt) => { setProgres(i); if (txt) setTexteActuel(txt); },
       () => {
         if (intervalRef.current) clearInterval(intervalRef.current);
         zenPlayer.stop();
@@ -314,6 +316,13 @@ export default function Visualisations() {
               {enPauseEtat ? '⏸ En pause' : '🎵 Musique zen  ·  🎙️ Voix guidée'}
             </p>
 
+            {/* Texte live */}
+            {texteActuel && !enPauseEtat && (
+              <div style={{ background: 'rgba(0,0,0,0.06)', borderRadius: '10px', padding: '0.85rem 1rem', marginBottom: '1rem', fontSize: '0.88rem', fontStyle: 'italic', textAlign: 'center', color: 'var(--encre-2)', lineHeight: 1.5 }}>
+                「{texteActuel}」
+              </div>
+            )}
+
             {/* Volume musique */}
             <div style={{ maxWidth: 240, margin: '0 auto 1.5rem' }}>
               <label style={{ fontSize: '0.8rem', color: 'var(--encre-3)', display: 'flex', justifyContent: 'space-between', marginBottom: '0.3rem' }}>
@@ -360,6 +369,7 @@ export default function Visualisations() {
         )}
       </div>
 
+      <SOSFlottant />
       <style>{`
         @keyframes pulse {
           0%, 100% { transform: scale(1); opacity: 0.75; }

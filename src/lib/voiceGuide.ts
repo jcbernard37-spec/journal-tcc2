@@ -1,22 +1,22 @@
 /**
  * voiceGuide.ts — Web Speech API, compatible iOS + Android
- *
- * Fix iOS critique : la première utterance DOIT être lancée
- * dans le même call stack qu'un geste utilisateur.
- * Solution : on appelle speak() immédiatement dans jouerScriptGuidé,
- * sans aucun setTimeout avant le premier segment.
+ * Expose le texte courant pour l'afficher en live dans l'UI.
  */
 
 export type Segment = { texte: string; pause?: number };
+// Le callback reçoit maintenant aussi le texte du segment courant
+export type OnProgression = (index: number, total: number, texteActuel: string) => void;
 
 let _idx    = 0;
 let _segs:  Segment[] = [];
 let _timer: ReturnType<typeof setTimeout> | null = null;
 let _paused = false;
-let _onProg: ((i: number, t: number) => void) | undefined;
-let _onFin:  (() => void)                    | undefined;
+let _onProg: OnProgression | undefined;
+let _onFin:  (() => void) | undefined;
+let _texteActuel = '';
 
-/** Trouve la meilleure voix française disponible */
+export function getTexteActuel(): string { return _texteActuel; }
+
 function voixFr(): SpeechSynthesisVoice | null {
   const all = window.speechSynthesis.getVoices();
   return (
@@ -29,6 +29,7 @@ function voixFr(): SpeechSynthesisVoice | null {
 
 function lireSeg(seg: Segment) {
   if (_paused) return;
+  _texteActuel = seg.texte;
 
   const u    = new SpeechSynthesisUtterance(seg.texte);
   u.lang     = 'fr-FR';
@@ -40,32 +41,25 @@ function lireSeg(seg: Segment) {
 
   u.onend = () => {
     _idx++;
-    if (_onProg) _onProg(_idx, _segs.length);
+    if (_onProg) _onProg(_idx, _segs.length, _segs[_idx]?.texte ?? '');
     if (_idx >= _segs.length) { if (_onFin) _onFin(); return; }
     _timer = setTimeout(() => lireSeg(_segs[_idx]), _segs[_idx - 1].pause ?? 1200);
   };
 
   u.onerror = (e) => {
-    // Ignore 'interrupted' (normal quand on appelle cancel/stop)
     if ((e as any).error === 'interrupted') return;
-    // Sur erreur, on passe au segment suivant
     _idx++;
-    if (_idx < _segs.length) {
-      _timer = setTimeout(() => lireSeg(_segs[_idx]), 800);
-    } else if (_onFin) _onFin();
+    if (_idx < _segs.length) _timer = setTimeout(() => lireSeg(_segs[_idx]), 800);
+    else if (_onFin) _onFin();
   };
 
   window.speechSynthesis.speak(u);
 }
 
-/**
- * Démarre une séquence guidée.
- * ⚠️ DOIT être appelé directement depuis un handler de clic
- *    (pas depuis setTimeout) pour fonctionner sur iOS Safari.
- */
+/** ⚠️ Appeler DIRECTEMENT depuis un handler onClick pour iOS */
 export function jouerScriptGuidé(
   segments: Segment[],
-  onProgression?: (index: number, total: number) => void,
+  onProgression?: OnProgression,
   onFin?: () => void
 ): void {
   arreter();
@@ -74,19 +68,26 @@ export function jouerScriptGuidé(
   _idx    = 0;
   _onProg = onProgression;
   _onFin  = onFin;
+  _texteActuel = '';
 
   if (!('speechSynthesis' in window)) {
-    console.warn('Web Speech API non disponible');
-    if (onFin) setTimeout(onFin, 1000);
+    // Pas de voix dispo : on joue quand même (silencieux), avec progression simulée
+    const dureeEstimee = segments.reduce((t, s) => t + (s.texte.length * 60) + (s.pause ?? 1200), 0);
+    let elapsed = 0;
+    const step = 2000;
+    const interval = setInterval(() => {
+      elapsed += step;
+      const idx = Math.floor((elapsed / dureeEstimee) * segments.length);
+      if (idx >= segments.length) { clearInterval(interval); if (onFin) onFin(); }
+      else if (onProgression) onProgression(idx, segments.length, segments[idx]?.texte ?? '');
+    }, step);
     return;
   }
 
-  // Annule tout speech en cours (important sur iOS)
   window.speechSynthesis.cancel();
-
-  // Démarre immédiatement le premier segment (critique pour iOS)
+  _texteActuel = segments[0]?.texte ?? '';
   lireSeg(_segs[0]);
-  if (_onProg) _onProg(0, _segs.length);
+  if (_onProg) _onProg(0, _segs.length, _texteActuel);
 }
 
 export function mettreEnPause(): void {
@@ -98,22 +99,23 @@ export function mettreEnPause(): void {
 export function reprendre(): void {
   _paused = false;
   window.speechSynthesis.resume();
-  // Si la synthèse s'est arrêtée, relancer depuis le segment courant
-  if (!window.speechSynthesis.speaking && _idx < _segs.length) {
-    lireSeg(_segs[_idx]);
-  }
+  if (!window.speechSynthesis.speaking && _idx < _segs.length) lireSeg(_segs[_idx]);
 }
 
 export function arreter(): void {
   _paused = false;
   window.speechSynthesis.cancel();
   if (_timer) { clearTimeout(_timer); _timer = null; }
-  _segs  = [];
-  _idx   = 0;
+  _segs = []; _idx = 0; _texteActuel = '';
 }
 
-export function estEnCours(): boolean {
-  return window.speechSynthesis.speaking && !_paused;
+export function voixDisponible(): boolean {
+  return 'speechSynthesis' in window;
 }
 
+export function voixFranceDisponible(): boolean {
+  return voixFr() !== null;
+}
+
+export function estEnCours(): boolean { return window.speechSynthesis.speaking && !_paused; }
 export function estEnPause(): boolean { return _paused; }

@@ -1,314 +1,152 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { stockage } from '../lib/storage';
 
 interface SessionTherapie {
-  id: string;
-  type: 'emdr' | 'yoga' | 'hypnose' | 'visualization' | 'bonus';
-  nom: string;
-  duree: number;
-  date: string;
-  efficacite: number; // 0-10
-  avantApres?: { avant: number; apres: number };
+  id: string; type: string; nom: string;
+  duree: number; date: string; efficacite: number;
+}
+
+const OUTILS_DEF = [
+  { id: 'emdr',           titre: 'EMDR Visuel',              desc: 'Traite traumas et peurs rapidement',          duree: '5-15 min', icon: '🎯', couleur: '#FF6B6B', lien: '/emdr' },
+  { id: 'yoga',           titre: 'Yoga Nidra',               desc: 'Relaxation profonde et recharge',             duree: '15-60 min', icon: '🧘', couleur: '#4ECDC4', lien: '/yoga-nidra' },
+  { id: 'hypnose',        titre: 'Hypnose Ericksonienne',    desc: 'Reprogramme tes croyances limitantes',        duree: '20-40 min', icon: '🌀', couleur: '#9D84B7', lien: '/hypnose' },
+  { id: 'visualisation',  titre: 'Visualisations Créatrices',desc: 'Manifeste et transforme ta réalité',          duree: '20-50 min', icon: '🌟', couleur: '#FFD93D', lien: '/visualisations' },
+  { id: 'bonus',          titre: 'Outils Bonus',             desc: 'Tapping, Cohérence, Méditation, Affirmations',duree: '5-30 min',  icon: '🎁', couleur: '#6BCF7F', lien: '/outils-bonus' },
+];
+
+function calcEfficienceOutil(sessions: SessionTherapie[], typeKeyword: string) {
+  const filtre = sessions.filter(s =>
+    (s.type ?? '').toLowerCase().includes(typeKeyword) ||
+    (s.nom  ?? '').toLowerCase().includes(typeKeyword)
+  );
+  if (filtre.length === 0) return null;
+  const avg = filtre.reduce((sum, s) => sum + (s.efficacite || 0), 0) / filtre.length;
+  return { count: filtre.length, efficacite: Math.round(avg) };
 }
 
 export default function OutilsTherapeutiques() {
   const [sessions, setSessions] = useState<SessionTherapie[]>([]);
-  const [filtreType, setFiltreType] = useState<string>('tous');
-  const [filtreDuree, setFiltreDuree] = useState<string>('tous');
-  const [affichageMode, setAffichageMode] = useState<'grille' | 'liste' | 'analytics'>('grille');
 
   useEffect(() => {
     const stored = localStorage.getItem('tcc_sessions_therapie');
-    if (stored) setSessions(JSON.parse(stored));
+    if (stored) try { setSessions(JSON.parse(stored)); } catch (_) {}
   }, []);
 
-  const outils = [
-    {
-      id: 'emdr',
-      titre: 'EMDR Visuel',
-      description: 'Traite traumas et peurs rapidement',
-      duree: '5-15 min',
-      couleur: '#FF6B6B',
-      icon: '🎯',
-      lien: '/emdr',
-      efficacite: 87,
-      utilisations: 12,
-    },
-    {
-      id: 'yoga',
-      titre: 'Yoga Nidra',
-      description: 'Relaxation profonde et recharge',
-      duree: '15-60 min',
-      couleur: '#4ECDC4',
-      icon: '🧘',
-      lien: '/yoga-nidra',
-      efficacite: 92,
-      utilisations: 8,
-    },
-    {
-      id: 'hypnose',
-      titre: 'Hypnose Ericksonienne',
-      description: 'Reprogramme tes croyances limitantes',
-      duree: '20-40 min',
-      couleur: '#9D84B7',
-      icon: '🌀',
-      lien: '/hypnose',
-      efficacite: 89,
-      utilisations: 5,
-    },
-    {
-      id: 'visualization',
-      titre: 'Visualisations Créatrices',
-      description: 'Manifeste et transforme ta réalité',
-      duree: '20-50 min',
-      couleur: '#FFD93D',
-      icon: '🌟',
-      lien: '/visualisations',
-      efficacite: 85,
-      utilisations: 6,
-    },
-    {
-      id: 'bonus',
-      titre: 'Outils Bonus',
-      description: 'Tapping, Breathing, Méditations, Affirmations',
-      duree: '3-30 min',
-      couleur: '#6BCF7F',
-      icon: '🎁',
-      lien: '/outils-bonus',
-      efficacite: 78,
-      utilisations: 15,
-    },
-  ];
+  const totalMin   = sessions.reduce((acc, s) => acc + (s.duree || 0), 0);
+  const efficMoy   = sessions.length > 0
+    ? Math.round(sessions.reduce((acc, s) => acc + (s.efficacite || 0), 0) / sessions.length)
+    : null;
 
-  const sessionsRecentes = sessions.slice(-5).reverse();
-  const efficaciteMoyenne = sessions.length > 0 
-    ? Math.round(sessions.reduce((acc, s) => acc + s.efficacite, 0) / sessions.length)
-    : 0;
+  const sessionsRecentes = [...sessions].reverse().slice(0, 5);
 
   return (
-    <div className="page" style={{ background: '#FAFAF8' }}>
-      <style>{`
-        .zen-card {
-          background: white;
-          border-radius: 12px;
-          padding: 1.6rem;
-          border: 1px solid #E8E6E1;
-          transition: all 0.3s ease;
-          box-shadow: 0 1px 3px rgba(0,0,0,0.05);
-        }
-        
-        .zen-card:hover {
-          box-shadow: 0 4px 12px rgba(0,0,0,0.08);
-          transform: translateY(-2px);
-        }
+    <div className="page">
+      <div className="conteneur-etroit" style={{ paddingTop: '2rem', paddingBottom: '3rem' }}>
 
-        .zen-button {
-          padding: 0.8rem 1.6rem;
-          border: none;
-          border-radius: 8px;
-          font-weight: 600;
-          cursor: pointer;
-          transition: all 0.2s;
-          font-size: 0.95rem;
-        }
-
-        .zen-button-primary {
-          background: linear-gradient(135deg, #6BCF7F 0%, #4ECDC4 100%);
-          color: white;
-        }
-
-        .zen-button-primary:hover {
-          transform: translateY(-1px);
-          box-shadow: 0 4px 12px rgba(107, 207, 127, 0.3);
-        }
-
-        .zen-button-secondary {
-          background: #F0F0ED;
-          color: #333;
-          border: 1.5px solid #E0DDD8;
-        }
-
-        .zen-button-secondary:hover {
-          background: #E8E6E1;
-        }
-
-        .zen-stat {
-          text-align: center;
-          padding: 1.2rem;
-        }
-
-        .zen-stat-number {
-          font-size: 2.2rem;
-          font-weight: 700;
-          color: #6BCF7F;
-          line-height: 1;
-        }
-
-        .zen-stat-label {
-          font-size: 0.85rem;
-          color: #999;
-          margin-top: 0.4rem;
-          text-transform: uppercase;
-          letter-spacing: 0.5px;
-        }
-
-        @keyframes float {
-          0%, 100% { transform: translateY(0px); }
-          50% { transform: translateY(-8px); }
-        }
-
-        .zen-float {
-          animation: float 3s ease-in-out infinite;
-        }
-
-        .zen-divider {
-          height: 1px;
-          background: linear-gradient(90deg, transparent, #E8E6E1, transparent);
-          margin: 1.6rem 0;
-        }
-      `}</style>
-
-      <div className="conteneur-etroit" style={{ paddingTop: '1.5rem', paddingBottom: '2rem' }}>
-        {/* Header */}
-        <div style={{ marginBottom: '2.4rem', textAlign: 'center' }}>
-          <h1 style={{ fontSize: '2.4rem', marginBottom: '0.6rem', color: '#222' }}>
-            Outils Thérapeutiques
-          </h1>
-          <p style={{ color: '#888', fontSize: '1rem', maxWidth: '500px', margin: '0 auto' }}>
+        {/* En-tête */}
+        <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
+          <h1 style={{ marginBottom: '0.5rem' }}>Outils Thérapeutiques</h1>
+          <p style={{ color: 'var(--encre-2)', maxWidth: '480px', margin: '0 auto', fontSize: '0.98rem' }}>
             Transforme tes patterns profonds avec EMDR, Hypnose, Yoga Nidra et Visualisations créatrices.
           </p>
         </div>
 
-        {/* Stats rapides */}
-        <div style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))',
-          gap: '1rem',
-          marginBottom: '2.4rem',
-        }}>
-          <div className="zen-card zen-stat">
-            <div className="zen-stat-number">{sessions.length}</div>
-            <div className="zen-stat-label">Sessions</div>
-          </div>
-          <div className="zen-card zen-stat">
-            <div className="zen-stat-number">{efficaciteMoyenne}%</div>
-            <div className="zen-stat-label">Efficacité</div>
-          </div>
-          <div className="zen-card zen-stat">
-            <div className="zen-stat-number">{Math.round(sessions.reduce((acc, s) => acc + s.duree, 0))}h</div>
-            <div className="zen-stat-label">Total</div>
-          </div>
-        </div>
-
-        {/* Outils principaux */}
-        <div style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))',
-          gap: '1.4rem',
-          marginBottom: '2.4rem',
-        }}>
-          {outils.map(outil => (
-            <div key={outil.id} className="zen-card zen-float" style={{
-              borderTop: `4px solid ${outil.couleur}`,
-            }}>
-              <div style={{ fontSize: '2.4rem', marginBottom: '0.8rem' }}>
-                {outil.icon}
-              </div>
-              <h3 style={{ margin: '0 0 0.4rem', fontSize: '1.1rem', color: '#222' }}>
-                {outil.titre}
-              </h3>
-              <p style={{ margin: '0 0 1rem', fontSize: '0.9rem', color: '#666', lineHeight: 1.4 }}>
-                {outil.description}
-              </p>
-              <div style={{ fontSize: '0.8rem', color: '#999', marginBottom: '1rem' }}>
-                ⏱️ {outil.duree}
-              </div>
-              <div style={{ display: 'flex', gap: '0.6rem', marginBottom: '1rem' }}>
-                <div style={{ flex: 1 }}>
-                  <div style={{ fontSize: '0.7rem', color: '#999', marginBottom: '0.2rem' }}>Efficacité</div>
-                  <div style={{
-                    height: '4px',
-                    background: '#EEE',
-                    borderRadius: '2px',
-                    overflow: 'hidden',
-                  }}>
-                    <div style={{
-                      height: '100%',
-                      background: outil.couleur,
-                      width: `${outil.efficacite}%`,
-                    }} />
-                  </div>
-                </div>
-                <div style={{ fontSize: '0.75rem', color: '#999', minWidth: '35px' }}>
-                  {outil.efficacite}%
-                </div>
-              </div>
-              <Link to={outil.lien}>
-                <button className="zen-button zen-button-primary" style={{ width: '100%' }}>
-                  Commencer
-                </button>
-              </Link>
+        {/* Stats réelles */}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: '0.75rem', marginBottom: '2rem' }}>
+          {[
+            { val: sessions.length.toString(), label: 'Sessions' },
+            { val: efficMoy !== null ? `${efficMoy}%` : '—', label: 'Efficacité moy.' },
+            { val: totalMin >= 60 ? `${(totalMin/60).toFixed(1)}h` : `${totalMin}m`, label: 'Temps total' },
+          ].map(({ val, label }) => (
+            <div key={label} style={{ background: 'var(--carte-bg)', border: '1px solid var(--carte-border)', borderRadius: '12px', padding: '1rem', textAlign: 'center' }}>
+              <div style={{ fontSize: '1.8rem', fontWeight: 800, color: 'var(--accent)', lineHeight: 1 }}>{val}</div>
+              <div style={{ fontSize: '0.75rem', color: 'var(--encre-3)', marginTop: '0.3rem', textTransform: 'uppercase', letterSpacing: '0.04em' }}>{label}</div>
             </div>
           ))}
         </div>
 
-        {/* Sessions récentes */}
-        {sessions.length > 0 && (
-          <>
-            <div className="zen-divider" />
-            <div>
-              <h2 style={{ fontSize: '1.2rem', marginBottom: '1rem', color: '#222' }}>
-                Sessions récentes
-              </h2>
-              <div style={{
-                display: 'grid',
-                gap: '0.8rem',
-              }}>
-                {sessionsRecentes.map((session, idx) => (
-                  <div key={idx} className="zen-card" style={{
-                    display: 'flex',
-                    justifyContent: 'space-between',
-                    alignItems: 'center',
-                    padding: '1rem 1.2rem',
-                  }}>
+        {/* Note psychologique */}
+        <div style={{ background: 'var(--bleu-pale)', border: '1px solid color-mix(in srgb, var(--bleu) 25%, transparent)', borderRadius: '12px', padding: '1rem 1.25rem', marginBottom: '2rem', fontSize: '0.88rem', color: 'var(--bleu)' }}>
+          <strong>Ces outils complètent, sans remplacer, un suivi thérapeutique professionnel.</strong>
+          En cas de détresse ou de trauma sévère, consulte un professionnel de santé mentale. Le bouton <strong>SOS</strong> est disponible en bas à droite à tout moment.
+        </div>
+
+        {/* Cartes outils */}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '1rem', marginBottom: '2rem' }}>
+          {OUTILS_DEF.map(outil => {
+            const stats = calcEfficienceOutil(sessions, outil.id);
+            return (
+              <div key={outil.id} style={{
+                background: 'var(--carte-bg)',
+                border: `1px solid var(--carte-border)`,
+                borderTop: `4px solid ${outil.couleur}`,
+                borderRadius: '14px',
+                padding: '1.5rem',
+                boxShadow: 'var(--ombre)',
+                transition: 'transform 0.2s, box-shadow 0.2s',
+              }}
+                onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-3px)'; e.currentTarget.style.boxShadow = '0 8px 24px rgba(0,0,0,0.1)'; }}
+                onMouseLeave={e => { e.currentTarget.style.transform = 'none'; e.currentTarget.style.boxShadow = 'var(--ombre)'; }}
+              >
+                <div style={{ fontSize: '2.2rem', marginBottom: '0.75rem' }}>{outil.icon}</div>
+                <h3 style={{ margin: '0 0 0.35rem', color: 'var(--encre)' }}>{outil.titre}</h3>
+                <p style={{ margin: '0 0 0.75rem', fontSize: '0.87rem', color: 'var(--encre-2)', lineHeight: 1.4 }}>{outil.desc}</p>
+                <div style={{ fontSize: '0.78rem', color: 'var(--encre-3)', marginBottom: '0.75rem' }}>⏱ {outil.duree}</div>
+
+                {/* Stats vraies ou "Pas encore essayé" */}
+                <div style={{ marginBottom: '1rem' }}>
+                  {stats ? (
                     <div>
-                      <div style={{ fontWeight: 600, color: '#222', marginBottom: '0.2rem' }}>
-                        {session.nom}
+                      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem', color: 'var(--encre-3)', marginBottom: '0.3rem' }}>
+                        <span>Ton efficacité ({stats.count} session{stats.count > 1 ? 's' : ''})</span>
+                        <span style={{ fontWeight: 700, color: outil.couleur }}>{stats.efficacite}%</span>
                       </div>
-                      <div style={{ fontSize: '0.85rem', color: '#999' }}>
-                        {new Date(session.date).toLocaleDateString()} • {session.duree} min
+                      <div style={{ height: 5, background: 'var(--bg-2)', borderRadius: '999px', overflow: 'hidden' }}>
+                        <div style={{ height: '100%', background: outil.couleur, width: `${Math.min(stats.efficacite, 100)}%`, borderRadius: '999px', transition: 'width 0.6s' }} />
                       </div>
                     </div>
-                    <div style={{
-                      background: '#E8F5E9',
-                      color: '#2E7D32',
-                      padding: '0.4rem 0.8rem',
-                      borderRadius: '6px',
-                      fontWeight: 600,
-                      fontSize: '0.9rem',
-                    }}>
-                      {session.efficacite}/10
+                  ) : (
+                    <div style={{ fontSize: '0.78rem', color: 'var(--encre-3)', fontStyle: 'italic' }}>Pas encore utilisé</div>
+                  )}
+                </div>
+
+                <Link to={outil.lien}>
+                  <button style={{
+                    width: '100%', padding: '0.8rem', border: 'none', borderRadius: '8px',
+                    background: outil.couleur, color: '#111', fontWeight: 700,
+                    cursor: 'pointer', fontSize: '0.92rem',
+                  }}>
+                    Commencer →
+                  </button>
+                </Link>
+              </div>
+            );
+          })}
+        </div>
+
+        {/* Sessions récentes */}
+        {sessionsRecentes.length > 0 && (
+          <div>
+            <h2 style={{ fontSize: '1.15rem', marginBottom: '1rem' }}>Sessions récentes</h2>
+            <div style={{ display: 'grid', gap: '0.6rem' }}>
+              {sessionsRecentes.map((s, i) => (
+                <div key={i} style={{ background: 'var(--carte-bg)', border: '1px solid var(--carte-border)', borderRadius: '10px', padding: '0.9rem 1.1rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <div>
+                    <div style={{ fontWeight: 600, color: 'var(--encre)', fontSize: '0.95rem' }}>{s.nom}</div>
+                    <div style={{ fontSize: '0.8rem', color: 'var(--encre-3)', marginTop: '0.2rem' }}>
+                      {new Date(s.date).toLocaleDateString('fr-FR')} · {s.duree} min
                     </div>
                   </div>
-                ))}
-              </div>
+                  {s.efficacite > 0 && (
+                    <div style={{ background: 'var(--accent-pale)', color: 'var(--accent-fonce)', padding: '0.35rem 0.75rem', borderRadius: '6px', fontWeight: 700, fontSize: '0.88rem' }}>
+                      {s.efficacite}%
+                    </div>
+                  )}
+                </div>
+              ))}
             </div>
-          </>
+          </div>
         )}
-
-        {/* CTA */}
-        <div className="zen-divider" />
-        <div style={{ textAlign: 'center', padding: '1.6rem' }}>
-          <p style={{ color: '#888', marginBottom: '1rem', fontSize: '0.95rem' }}>
-            Combinez les outils pour des résultats maximaux. L'IA te recommande le meilleur combo pour toi.
-          </p>
-          <Link to="/hub">
-            <button className="zen-button zen-button-secondary">
-              ← Retour au tableau de bord
-            </button>
-          </Link>
-        </div>
       </div>
     </div>
   );

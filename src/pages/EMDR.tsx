@@ -1,147 +1,91 @@
 import { useState, useEffect, useRef } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { jouerScriptGuidé, arreter, mettreEnPause, reprendre } from '../lib/voiceGuide';
+import { useNavigate, Link } from 'react-router-dom';
+import { jouerScriptGuidé, arreter } from '../lib/voiceGuide';
+import SOSFlottant from '../lib/SOSFlottant';
 
-const SCRIPT_INTRO = [
-  { texte: "Bienvenue dans cette session EMDR. Je vais te guider à travers le traitement.", pause: 3000 },
-  { texte: "L'EMDR utilise des stimulations visuelles alternées pour aider ton cerveau à traiter les souvenirs douloureux.", pause: 4000 },
-  { texte: "Pense à quelque chose qui te cause du stress. Une peur, un souvenir difficile, une tension.", pause: 5000 },
-  { texte: "Donne-lui un score de zéro à dix. Zéro, pas de détresse. Dix, détresse maximale.", pause: 5000 },
-  { texte: "Garde cette image ou cette pensée présente à l'esprit. Maintenant, suis les cercles des yeux, de gauche à droite.", pause: 4000 },
-  { texte: "Laisse venir ce qui vient. Des pensées, des images, des sensations. Ne les retiens pas. Laisse-les passer.", pause: 4000 },
-  { texte: "La stimulation commence.", pause: 2000 },
-];
+type Phase = 'disclaimer' | 'suds' | 'processing' | 'post';
 
-const SCRIPTS_PAUSE = [
-  [
-    { texte: "Pause. Prends une grande inspiration.", pause: 4000 },
-    { texte: "Qu'est-ce que tu remarques ? Des pensées, des images, des sensations dans le corps ?", pause: 6000 },
-    { texte: "Note-le simplement. Puis nous continuons.", pause: 4000 },
-  ],
-  [
-    { texte: "Autre pause. Respire.", pause: 4000 },
-    { texte: "Qu'est-ce qui vient maintenant ? Comment a changé ce que tu ressentais au début ?", pause: 6000 },
-    { texte: "Continue à suivre les yeux.", pause: 3000 },
-  ],
-  [
-    { texte: "Respire. Tu fais du très bon travail.", pause: 4000 },
-    { texte: "Notice ce qui se passe dans ton corps en ce moment. Y a-t-il une différence ?", pause: 6000 },
-    { texte: "Continuons.", pause: 2000 },
-  ],
-];
-
-const SCRIPT_FIN = [
-  { texte: "Bien. Nous allons maintenant installer la ressource.", pause: 3000 },
-  { texte: "Pense à quelque chose de positif. Un souvenir agréable, une force que tu possèdes.", pause: 5000 },
-  { texte: "Suis les yeux en gardant cette image positive.", pause: 3000 },
+// Script vocal EMDR — espacé, discret, sans surcharger l'expérience visuelle
+const SCRIPT_EMDR = [
+  { texte: "Concentre-toi sur ce souvenir ou cette peur. Observe l'image, les sensations, les émotions.", pause: 9000 },
+  { texte: "Commence à suivre le mouvement.", pause: 10000 },
+  { texte: "Observe simplement ce qui vient. Pensées, images, sensations. Sans forcer.", pause: 12000 },
+  { texte: "Laisse aller.", pause: 10000 },
+  { texte: "Continue à suivre. Tu fais très bien.", pause: 10000 },
+  { texte: "Note ce qui se passe, sans t'y accrocher.", pause: 12000 },
+  { texte: "Tu es en sécurité ici.", pause: 8000 },
+  { texte: "Continue à observer.", pause: 15000 },
+  { texte: "Laisse venir ce qui doit venir.", pause: 10000 },
+  { texte: "Presque terminé. Encore quelques instants.", pause: 10000 },
+  { texte: "Prends une pause maintenant. Respire profondément. Que remarques-tu ?", pause: 3000 },
 ];
 
 export default function EMDR() {
   const navigate = useNavigate();
-  const [phase, setPhase] = useState<'info' | 'suds' | 'traitement' | 'ressource' | 'apres'>('info');
-  const [sudsAvant, setSudsAvant] = useState(6);
-  const [sudsApres, setSudsApres] = useState(6);
+  const [phase, setPhase]     = useState<Phase>('disclaimer');
+  const [sudsAvant, setSudsAvant] = useState(5);
+  const [sudsApres, setSudsApres] = useState(5);
   const [direction, setDirection] = useState<'left' | 'right'>('left');
-  const [tempsTotal, setTempsTotal] = useState(0);
-  const [cycles, setCycles] = useState(0);
-  const [pauseRound, setPauseRound] = useState(0);
-  const [actif, setActif] = useState(false);
-
-  const dirRef = useRef<ReturnType<typeof setInterval> | null>(null);
-  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
-  const pauseRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [duree, setDuree]     = useState(0);
+  const [cycles, setCycles]   = useState(0);
+  const [isRunning, setIsRunning] = useState(false);
+  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const dirIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   useEffect(() => () => {
     arreter();
-    if (dirRef.current) clearInterval(dirRef.current);
-    if (timerRef.current) clearInterval(timerRef.current);
-    if (pauseRef.current) clearTimeout(pauseRef.current);
+    if (intervalRef.current) clearInterval(intervalRef.current);
+    if (dirIntervalRef.current) clearInterval(dirIntervalRef.current);
   }, []);
 
   const demarrerTraitement = () => {
-    setActif(true);
-    setPhase('traitement');
-    setTempsTotal(0);
-    setCycles(0);
-    setPauseRound(0);
+    setPhase('processing');
+    setIsRunning(true);
 
-    timerRef.current = setInterval(() => setTempsTotal(t => t + 1), 1000);
-
-    jouerScriptGuidé(SCRIPT_INTRO, undefined, () => {
-      demarrerStimulation();
+    // Voix guidée EMDR — depuis le geste utilisateur (fix iOS)
+    jouerScriptGuidé(SCRIPT_EMDR, undefined, () => {
+      stopProcessing();
+      setPhase('post');
     });
-  };
 
-  const demarrerStimulation = () => {
-    // Alterner gauche/droite 1 fois par seconde
-    dirRef.current = setInterval(() => {
-      setDirection(d => d === 'left' ? 'right' : 'left');
+    // Animation bilatérale 1Hz
+    dirIntervalRef.current = setInterval(() =>
+      setDirection(d => d === 'left' ? 'right' : 'left'), 500);
+
+    // Timer
+    intervalRef.current = setInterval(() => {
+      setDuree(d => d + 1);
       setCycles(c => c + 1);
-    }, 900);
-
-    // Pause toutes les 30 secondes
-    schedulePause();
+    }, 1000);
   };
 
-  const schedulePause = () => {
-    const round = pauseRound;
-    pauseRef.current = setTimeout(() => {
-      // Arrêter la stimulation visuelle
-      if (dirRef.current) clearInterval(dirRef.current);
-
-      // Lire le script de pause
-      const scriptPause = SCRIPTS_PAUSE[Math.min(round, SCRIPTS_PAUSE.length - 1)];
-      jouerScriptGuidé(scriptPause, undefined, () => {
-        setPauseRound(r => r + 1);
-        // Reprendre si on n'a pas encore fait 3 rounds
-        if (round < 2) {
-          dirRef.current = setInterval(() => {
-            setDirection(d => d === 'left' ? 'right' : 'left');
-            setCycles(c => c + 1);
-          }, 900);
-          schedulePause();
-        } else {
-          // Passer à la ressource
-          if (dirRef.current) clearInterval(dirRef.current);
-          jouerScriptGuidé(SCRIPT_FIN, undefined, () => {
-            demarrerStimulationRessource();
-          });
-        }
-      });
-    }, 30000);
+  const stopProcessing = () => {
+    setIsRunning(false);
+    if (dirIntervalRef.current) clearInterval(dirIntervalRef.current);
+    if (intervalRef.current) clearInterval(intervalRef.current);
   };
 
-  const demarrerStimulationRessource = () => {
-    setPhase('ressource');
-    dirRef.current = setInterval(() => {
-      setDirection(d => d === 'left' ? 'right' : 'left');
-    }, 900);
-    setTimeout(() => {
-      if (dirRef.current) clearInterval(dirRef.current);
-      setActif(false);
-      if (timerRef.current) clearInterval(timerRef.current);
-      setPhase('apres');
-    }, 20000);
-  };
-
-  const arreterManuellement = () => {
+  const handleArret = () => {
     arreter();
-    if (dirRef.current) clearInterval(dirRef.current);
-    if (pauseRef.current) clearTimeout(pauseRef.current);
-    if (timerRef.current) clearInterval(timerRef.current);
-    setActif(false);
-    setPhase('apres');
+    stopProcessing();
+    setPhase('post');
   };
 
   const sauvegarder = () => {
-    const s = { id: Date.now().toString(), type: 'emdr', nom: 'Session EMDR', duree: Math.round(tempsTotal / 60), date: new Date().toISOString(), suds: { avant: sudsAvant, apres: sudsApres }, efficacite: Math.max(0, (sudsAvant - sudsApres) * 12 + 40) };
+    const amelioration = sudsAvant - sudsApres;
+    const s = {
+      id: Date.now().toString(), type: 'emdr',
+      nom: 'Session EMDR Bilatérale',
+      duree: Math.round(duree / 60) || 1,
+      date: new Date().toISOString(),
+      efficacite: Math.max(0, Math.min(100, amelioration * 10 + 50)),
+      suds: { avant: sudsAvant, apres: sudsApres },
+    };
     const arr = JSON.parse(localStorage.getItem('tcc_sessions_therapie') || '[]');
     arr.push(s);
     localStorage.setItem('tcc_sessions_therapie', JSON.stringify(arr));
     navigate('/outils-therapeutiques');
   };
-
-  const formatTemps = (s: number) => `${Math.floor(s/60)}:${String(s%60).padStart(2,'0')}`;
 
   return (
     <div className="page">
@@ -153,98 +97,137 @@ export default function EMDR() {
 
         <div style={{ background: 'var(--carte-bg)', borderRadius: '16px', padding: '2rem', marginBottom: '1.5rem', border: '1px solid var(--carte-border)' }}>
           <div style={{ fontSize: '2.5rem', marginBottom: '0.75rem' }}>🎯</div>
-          <h1 style={{ marginBottom: '0.5rem' }}>EMDR Guidé</h1>
-          <p style={{ color: 'var(--encre-2)', margin: 0 }}>Stimulation bilatérale guidée par la voix. Suis les cercles des yeux et laisse le traitement se faire.</p>
+          <h1 style={{ marginBottom: '0.5rem' }}>EMDR — Stimulation Bilatérale</h1>
+          <p style={{ color: 'var(--encre-2)', margin: 0 }}>Animation visuelle + voix guidée + binaural 1Hz.</p>
         </div>
 
-        {phase === 'info' && (
+        {/* ── DISCLAIMER ── */}
+        {phase === 'disclaimer' && (
           <div style={{ background: 'var(--carte-bg)', borderRadius: '16px', padding: '1.75rem', border: '1px solid var(--carte-border)' }}>
-            <h2 style={{ fontSize: '1.3rem', marginBottom: '1rem' }}>Comment ça fonctionne</h2>
-            <div style={{ color: 'var(--encre-2)', lineHeight: 1.7, marginBottom: '1.5rem' }}>
-              <p style={{ marginBottom: '0.75rem' }}>L'EMDR (Eye Movement Desensitization and Reprocessing) est une thérapie validée scientifiquement pour traiter les traumatismes et les peurs.</p>
-              <p style={{ marginBottom: '0.75rem' }}>Tu vas suivre des cercles alternés gauche-droite pendant que tu penses à quelque chose qui te cause du stress. La voix te guide tout au long.</p>
-              <p>3 séries de 30 secondes + installation d'une ressource positive.</p>
+            <div style={{ fontSize: '1.8rem', marginBottom: '0.75rem' }}>⚠️</div>
+            <h2 style={{ fontSize: '1.3rem', marginBottom: '1rem' }}>Avant de commencer</h2>
+
+            <p style={{ color: 'var(--encre-2)', marginBottom: '1rem', lineHeight: 1.6 }}>
+              L'EMDR est une technique thérapeutique <strong>scientifiquement validée</strong> pour le traitement des peurs, des traumatismes et des souvenirs douloureux.
+            </p>
+
+            <div style={{ background: 'var(--chaud-pale)', border: '1px solid color-mix(in srgb, var(--chaud) 30%, transparent)', borderRadius: '10px', padding: '1rem', marginBottom: '1rem', color: 'var(--chaud)', fontSize: '0.9rem', lineHeight: 1.6 }}>
+              <strong>⚠️ Important :</strong> Cet outil est adapté aux peurs et préoccupations du quotidien.
+              Si tu traverses un <strong>trauma sévère</strong> (agression, accident grave, deuil récent),
+              il est fortement recommandé de travailler avec un <strong>professionnel EMDR certifié</strong>.
             </div>
-            <button onClick={() => setPhase('suds')}
-              style={{ width: '100%', padding: '1rem', borderRadius: '999px', background: '#FF6B6B', color: 'white', border: 'none', fontWeight: 700, cursor: 'pointer' }}>
-              Commencer →
-            </button>
+
+            <p style={{ color: 'var(--encre-3)', fontSize: '0.88rem', marginBottom: '1.5rem', lineHeight: 1.5 }}>
+              Si à tout moment tu te sens en détresse, le bouton <strong>SOS</strong> est disponible en bas à droite de l'écran.
+            </p>
+
+            <div style={{ display: 'flex', gap: '0.75rem' }}>
+              <Link to="/sos" style={{ flex: 1 }}>
+                <button style={{ width: '100%', padding: '0.9rem', borderRadius: '999px', background: 'var(--crise-pale)', border: '1.5px solid var(--crise)', color: 'var(--crise)', fontWeight: 700, cursor: 'pointer' }}>
+                  Aller vers SOS
+                </button>
+              </Link>
+              <button onClick={() => setPhase('suds')}
+                style={{ flex: 2, padding: '0.9rem', borderRadius: '999px', background: '#FF6B6B', color: 'white', border: 'none', fontWeight: 700, cursor: 'pointer' }}>
+                Je comprends — Continuer
+              </button>
+            </div>
           </div>
         )}
 
+        {/* ── SUDS AVANT ── */}
         {phase === 'suds' && (
           <div style={{ background: 'var(--carte-bg)', borderRadius: '16px', padding: '1.75rem', border: '1px solid var(--carte-border)' }}>
-            <h2 style={{ fontSize: '1.3rem', marginBottom: '1.25rem' }}>Avant le traitement</h2>
-            <p style={{ color: 'var(--encre-2)', marginBottom: '1rem' }}>Pense à ce que tu veux traiter. Quel est ton niveau de détresse maintenant ?</p>
-            <input type="range" min={0} max={10} value={sudsAvant} onChange={e => setSudsAvant(+e.target.value)} style={{ width: '100%', accentColor: '#FF6B6B', marginBottom: '0.5rem' }} />
+            <h2 style={{ fontSize: '1.3rem', marginBottom: '1rem' }}>Évalue ta détresse (SUDS)</h2>
+            <p style={{ color: 'var(--encre-2)', marginBottom: '1.25rem', fontSize: '0.93rem' }}>
+              Pense au souvenir ou à la peur que tu veux traiter. Sur 10, quelle est son intensité en ce moment ?
+            </p>
+            <input type="range" min={0} max={10} value={sudsAvant}
+              onChange={e => setSudsAvant(+e.target.value)}
+              style={{ width: '100%', accentColor: '#FF6B6B', marginBottom: '0.5rem' }} />
             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '1.5rem' }}>
               <span style={{ fontSize: '0.8rem', color: 'var(--encre-3)' }}>0 — Aucune détresse</span>
-              <span style={{ fontWeight: 700, color: '#FF6B6B', fontSize: '1.2rem' }}>{sudsAvant}/10</span>
-              <span style={{ fontSize: '0.8rem', color: 'var(--encre-3)' }}>10 — Maximum</span>
+              <span style={{ fontWeight: 800, color: '#FF6B6B', fontSize: '1.2rem' }}>{sudsAvant}/10</span>
+              <span style={{ fontSize: '0.8rem', color: 'var(--encre-3)' }}>10 — Détresse max</span>
             </div>
-            <div style={{ background: 'rgba(255,107,107,0.1)', padding: '1rem', borderRadius: '10px', marginBottom: '1.5rem', color: '#CC4444', fontSize: '0.88rem' }}>
-              🎙️ La voix te guidera tout au long. Mets le volume de ton appareil.
+            <div style={{ background: 'var(--accent-pale)', padding: '0.85rem 1rem', borderRadius: '10px', marginBottom: '1.5rem', color: 'var(--accent-fonce)', fontSize: '0.88rem' }}>
+              🎙️ Une voix te guidera pendant la stimulation. Monte le volume de ton appareil.
             </div>
             <button onClick={demarrerTraitement}
               style={{ width: '100%', padding: '1rem', borderRadius: '999px', background: '#FF6B6B', color: 'white', border: 'none', fontWeight: 700, cursor: 'pointer' }}>
-              🎙️ Démarrer le traitement guidé
+              🎯 Commencer le traitement
             </button>
           </div>
         )}
 
-        {(phase === 'traitement' || phase === 'ressource') && (
+        {/* ── PROCESSING ── */}
+        {phase === 'processing' && (
           <div style={{ background: 'var(--carte-bg)', borderRadius: '16px', padding: '2rem', border: '1px solid var(--carte-border)', textAlign: 'center' }}>
-            <h2 style={{ marginBottom: '0.5rem' }}>
-              {phase === 'ressource' ? 'Installation de la ressource' : 'Traitement EMDR'}
-            </h2>
-            <p style={{ color: 'var(--encre-3)', marginBottom: '2rem', fontSize: '0.9rem' }}>
-              {phase === 'ressource' ? 'Pense à quelque chose de positif' : 'Suis les cercles des yeux'}
+            <h2 style={{ marginBottom: '0.5rem' }}>Traitement en cours</h2>
+            <p style={{ color: 'var(--encre-3)', marginBottom: '2rem', fontSize: '0.88rem' }}>
+              Suis le mouvement avec tes yeux · Observe ce qui vient
             </p>
 
             {/* Animation bilatérale */}
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '3rem', margin: '2rem auto', height: '100px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 1.5rem', marginBottom: '2.5rem', height: '120px' }}>
               <div style={{
-                width: 60, height: 60, borderRadius: '50%',
+                width: 64, height: 64, borderRadius: '50%',
                 background: direction === 'left' ? '#FF6B6B' : 'var(--bg-2)',
-                transition: 'background 0.2s, transform 0.2s',
-                transform: direction === 'left' ? 'scale(1.1)' : 'scale(0.85)',
+                transform: direction === 'left' ? 'scale(1.15)' : 'scale(0.85)',
+                transition: 'all 0.25s ease-out',
+                boxShadow: direction === 'left' ? '0 0 24px #FF6B6B80' : 'none',
               }} />
-              <div style={{ color: 'var(--encre-3)', fontSize: '1.5rem' }}>↔</div>
+              <div style={{ color: 'var(--encre-3)', fontSize: '1.2rem' }}>↔</div>
               <div style={{
-                width: 60, height: 60, borderRadius: '50%',
+                width: 64, height: 64, borderRadius: '50%',
                 background: direction === 'right' ? '#FF6B6B' : 'var(--bg-2)',
-                transition: 'background 0.2s, transform 0.2s',
-                transform: direction === 'right' ? 'scale(1.1)' : 'scale(0.85)',
+                transform: direction === 'right' ? 'scale(1.15)' : 'scale(0.85)',
+                transition: 'all 0.25s ease-out',
+                boxShadow: direction === 'right' ? '0 0 24px #FF6B6B80' : 'none',
               }} />
             </div>
 
-            <div style={{ fontSize: '1.5rem', fontWeight: 700, color: '#FF6B6B', marginBottom: '0.5rem' }}>{formatTemps(tempsTotal)}</div>
-            <div style={{ color: 'var(--encre-3)', fontSize: '0.85rem', marginBottom: '2rem' }}>
-              {cycles} cycles · Série {Math.min(pauseRound + 1, 3)}/3
+            <div style={{ fontSize: '1.5rem', fontWeight: 800, color: '#FF6B6B', marginBottom: '0.5rem' }}>
+              {Math.floor(duree / 60)}:{String(duree % 60).padStart(2, '0')}
+            </div>
+            <div style={{ fontSize: '0.8rem', color: 'var(--encre-3)', marginBottom: '2rem' }}>
+              🎙️ Voix guidée active · {cycles} cycles bilatéraux
             </div>
 
-            <button onClick={arreterManuellement}
-              style={{ padding: '0.85rem 2rem', borderRadius: '999px', background: 'var(--chaud-pale)', border: '1.5px solid var(--chaud)', fontWeight: 600, cursor: 'pointer', color: 'var(--chaud)' }}>
-              Arrêter
+            <button onClick={handleArret}
+              style={{ padding: '0.9rem 2rem', borderRadius: '999px', background: 'var(--bg-2)', border: '1.5px solid var(--carte-border)', fontWeight: 600, cursor: 'pointer', color: 'var(--encre)' }}>
+              Arrêter le traitement
             </button>
           </div>
         )}
 
-        {phase === 'apres' && (
+        {/* ── POST ── */}
+        {phase === 'post' && (
           <div style={{ background: 'var(--carte-bg)', borderRadius: '16px', padding: '1.75rem', border: '1px solid var(--carte-border)' }}>
-            <h2 style={{ marginBottom: '1.25rem' }}>Après le traitement 🎯</h2>
-            <p style={{ color: 'var(--encre-2)', marginBottom: '1rem' }}>Comment est ton niveau de détresse maintenant ?</p>
-            <input type="range" min={0} max={10} value={sudsApres} onChange={e => setSudsApres(+e.target.value)} style={{ width: '100%', accentColor: '#FF6B6B', marginBottom: '0.5rem' }} />
+            <h2 style={{ marginBottom: '1rem' }}>Après le traitement</h2>
+            <p style={{ color: 'var(--encre-2)', marginBottom: '1.25rem', fontSize: '0.93rem' }}>
+              Prends une grande respiration. Pense maintenant au souvenir ou à la peur initiale. Quelle est son intensité ?
+            </p>
+            <input type="range" min={0} max={10} value={sudsApres}
+              onChange={e => setSudsApres(+e.target.value)}
+              style={{ width: '100%', accentColor: '#FF6B6B', marginBottom: '0.5rem' }} />
             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '1.5rem' }}>
               <span style={{ fontSize: '0.8rem', color: 'var(--encre-3)' }}>0 — Aucune détresse</span>
-              <span style={{ fontWeight: 700, color: '#FF6B6B', fontSize: '1.2rem' }}>{sudsApres}/10</span>
-              <span style={{ fontSize: '0.8rem', color: 'var(--encre-3)' }}>10 — Maximum</span>
+              <span style={{ fontWeight: 800, color: '#FF6B6B', fontSize: '1.2rem' }}>{sudsApres}/10</span>
+              <span style={{ fontSize: '0.8rem', color: 'var(--encre-3)' }}>10 — Détresse max</span>
             </div>
+
             {sudsApres < sudsAvant && (
-              <div style={{ background: 'var(--accent-pale)', padding: '0.85rem 1rem', borderRadius: '10px', marginBottom: '1.25rem', color: 'var(--accent-fonce)', fontWeight: 600 }}>
-                ✓ Réduction de {sudsAvant - sudsApres} points — excellent !
+              <div style={{ background: 'var(--accent-pale)', borderRadius: '10px', padding: '0.9rem 1rem', marginBottom: '1.25rem', color: 'var(--accent-fonce)', fontWeight: 600 }}>
+                ✓ Réduction de {sudsAvant - sudsApres} points — bon travail !
               </div>
             )}
+            {sudsApres >= sudsAvant && sudsApres > 0 && (
+              <div style={{ background: 'var(--chaud-pale)', borderRadius: '10px', padding: '0.9rem 1rem', marginBottom: '1.25rem', color: 'var(--chaud)', fontSize: '0.9rem' }}>
+                Si l'intensité n'a pas baissé, c'est normal. L'EMDR demande parfois plusieurs sessions. Tu peux recommencer ou aller vers SOS si besoin.
+              </div>
+            )}
+
             <button onClick={sauvegarder}
               style={{ width: '100%', padding: '1rem', borderRadius: '999px', background: '#FF6B6B', color: 'white', border: 'none', fontWeight: 700, cursor: 'pointer' }}>
               Sauvegarder la session
@@ -252,6 +235,7 @@ export default function EMDR() {
           </div>
         )}
       </div>
+      <SOSFlottant />
     </div>
   );
 }

@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { jouerScriptGuidé, arreter, mettreEnPause, reprendre } from '../lib/voiceGuide';
 import { getZenPlayer } from '../lib/zenMusic';
+import SOSFlottant from '../lib/SOSFlottant';
 
 type Niveau = 'relaxation' | 'croyance' | 'ressource';
 
@@ -94,6 +95,7 @@ export default function Hypnose() {
   const [phase, setPhase] = useState<'choix' | 'session' | 'apres'>('choix');
   const [ressenti, setRessenti] = useState(5);
   const [enPauseEtat, setEnPauseEtat] = useState(false);
+  const [texteActuel, setTexteActuel] = useState('');
   const [progres, setProgres] = useState(0);
   const [total, setTotal] = useState(0);
   const [tempsSession, setTempsSession] = useState(0);
@@ -117,7 +119,7 @@ export default function Hypnose() {
 
     // Musique + voix depuis le geste utilisateur (fix iOS)
     zenPlayer.play(0.3);
-    jouerScriptGuidé(script, (i) => setProgres(i), () => {
+    jouerScriptGuidé(script, (i, _t, txt) => { setProgres(i); if (txt) setTexteActuel(txt); }, () => {
       if (intervalRef.current) clearInterval(intervalRef.current);
       zenPlayer.stop();
       setPhase('apres');
@@ -186,7 +188,12 @@ export default function Hypnose() {
             <div style={{ background: 'var(--bg-2)', borderRadius: '999px', height: 6, margin: '0 auto 1.5rem', maxWidth: 280 }}>
               <div style={{ height: 6, borderRadius: '999px', background: '#9D84B7', width: `${total > 0 ? (progres / total) * 100 : 0}%`, transition: 'width 0.5s' }} />
             </div>
-            <p style={{ color: 'var(--encre-3)', marginBottom: '2rem', fontSize: '0.9rem' }}>{enPauseEtat ? '⏸ En pause' : '🎙️ Guidance vocale en cours...'}</p>
+            <p style={{ color: 'var(--encre-3)', marginBottom: '1rem', fontSize: '0.9rem' }}>{enPauseEtat ? '⏸ En pause' : '🎙️ Guidance vocale en cours...'}</p>
+            {texteActuel && !enPauseEtat && (
+              <div style={{ background: 'rgba(157,132,183,0.12)', borderRadius: '10px', padding: '0.85rem 1rem', marginBottom: '1.25rem', color: '#7A5FA0', fontSize: '0.88rem', fontStyle: 'italic', textAlign: 'center', lineHeight: 1.5 }}>
+                「{texteActuel}」
+              </div>
+            )}
             <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'center' }}>
               <button onClick={togglePause} style={{ padding: '0.85rem 1.5rem', borderRadius: '999px', background: 'var(--bg-2)', border: '1.5px solid var(--carte-border)', fontWeight: 700, cursor: 'pointer', color: 'var(--encre)' }}>
                 {enPauseEtat ? '▶ Reprendre' : '⏸ Pause'}
@@ -211,6 +218,7 @@ export default function Hypnose() {
         )}
       </div>
       <style>{`@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }`}</style>
+      <SOSFlottant />
     </div>
   );
 }
