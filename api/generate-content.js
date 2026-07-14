@@ -23,7 +23,7 @@ export default async function handler(req, res) {
         'x-api-key': apiKey,
       },
       body: JSON.stringify({
-        model: 'claude-opus-4-6',
+        model: 'claude-sonnet-5',
         max_tokens: 2000,
         messages: [
           {

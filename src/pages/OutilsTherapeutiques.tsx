@@ -6,11 +6,12 @@ interface SessionTherapie {
   duree: number; date: string; efficacite: number;
 }
 
-const OUTILS_DEF = [
+// lienPro est optionnel (pages bêta Eleven Labs)
+const OUTILS_DEF: { id: string; titre: string; desc: string; duree: string; icon: string; couleur: string; lien: string; lienPro?: string }[] = [
   { id: 'emdr',           titre: 'EMDR Visuel',              desc: 'Traite traumas et peurs rapidement',          duree: '5-15 min', icon: '🎯', couleur: '#FF6B6B', lien: '/emdr' },
-  { id: 'yoga',           titre: 'Yoga Nidra',               desc: 'Relaxation profonde et recharge',             duree: '15-60 min', icon: '🧘', couleur: '#4ECDC4', lien: '/yoga-nidra' },
-  { id: 'hypnose',        titre: 'Hypnose Ericksonienne',    desc: 'Reprogramme tes croyances limitantes',        duree: '20-40 min', icon: '🌀', couleur: '#9D84B7', lien: '/hypnose' },
-  { id: 'visualisation',  titre: 'Visualisations Créatrices',desc: 'Manifeste et transforme ta réalité',          duree: '20-50 min', icon: '🌟', couleur: '#FFD93D', lien: '/visualisations' },
+  { id: 'yoga',           titre: 'Yoga Nidra',               desc: 'Relaxation profonde et recharge',             duree: '15-60 min', icon: '🧘', couleur: '#4ECDC4', lien: '/yoga-nidra', lienPro: '/yoga-nidra-pro' },
+  { id: 'hypnose',        titre: 'Hypnose Ericksonienne',    desc: 'Reprogramme tes croyances limitantes',        duree: '20-40 min', icon: '🌀', couleur: '#9D84B7', lien: '/hypnose', lienPro: '/hypnose-pro' },
+  { id: 'visualisation',  titre: 'Visualisations Créatrices',desc: 'Manifeste et transforme ta réalité',          duree: '20-50 min', icon: '🌟', couleur: '#FFD93D', lien: '/visualisations', lienPro: '/visualisations-pro' },
   { id: 'bonus',          titre: 'Outils Bonus',             desc: 'Tapping, Cohérence, Méditation, Affirmations',duree: '5-30 min',  icon: '🎁', couleur: '#6BCF7F', lien: '/outils-bonus' },
 ];
 
@@ -119,6 +120,14 @@ export default function OutilsTherapeutiques() {
                     Commencer →
                   </button>
                 </Link>
+
+                {outil.lienPro && (
+                  <Link to={outil.lienPro} style={{ display: 'block', textAlign: 'center', marginTop: '0.5rem' }}>
+                    <span style={{ fontSize: '0.72rem', color: 'var(--encre-3)', textDecoration: 'underline' }}>
+                      🔊 Version voix Pro (bêta — nécessite clé Eleven Labs)
+                    </span>
+                  </Link>
+                )}
               </div>
             );
           })}

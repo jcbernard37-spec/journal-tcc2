@@ -5,7 +5,7 @@
  */
 
 // Note: VITE_ELEVEN_LABS_KEY doit être défini dans .env ou Vercel env
-let ELEVEN_LABS_API_KEY = '';
+const ELEVEN_LABS_API_KEY = import.meta.env.VITE_ELEVEN_LABS_KEY || '';
 const VOICE_ID = 'EXAVITQu4vr4xnSDxMaL'; // Rachel - Natural, warm, calm
 
 interface AudioCacheEntry {
@@ -35,6 +35,11 @@ export async function textToSpeech(
     if (Date.now() - cached.timestamp < 30 * 24 * 60 * 60 * 1000) {
       return cached.audioUrl;
     }
+  }
+
+  if (!ELEVEN_LABS_API_KEY) {
+    console.warn('[Solco] VITE_ELEVEN_LABS_KEY absente — voix Pro indisponible.');
+    return null;
   }
 
   try {

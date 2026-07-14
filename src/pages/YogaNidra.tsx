@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { jouerScriptGuidé, arreter, mettreEnPause, reprendre } from '../lib/voiceGuide';
-import { YOGA_NIDRA_COURT, YOGA_NIDRA_LONG } from '../data/scriptsTherapeutiques';
+import { YOGA_NIDRA_COURT, YOGA_NIDRA_MOYEN, YOGA_NIDRA_LONG } from '../data/scriptsTherapeutiques';
 import type { Segment } from '../data/scriptsTherapeutiques';
 import { getZenPlayer } from '../lib/zenMusic';
 import SOSFlottant from '../lib/SOSFlottant';
@@ -10,41 +10,8 @@ type Duree = 'court' | 'moyen' | 'long';
 
 const SCRIPTS: Record<'court' | 'moyen' | 'long', Segment[]> = {
   court: YOGA_NIDRA_COURT,
-  moyen: [
-    { texte: "Bienvenue dans cette session de Yoga Nidra de trente minutes.", pause: 2500 },
-    { texte: "Installe-toi. Laisse le poids de ton corps être accueilli.", pause: 4000 },
-    { texte: "Tu n'as rien à accomplir. Rien à corriger.", pause: 4000 },
-    { texte: "Commence par une double inspiration — inspire...", pause: 3000 },
-    { texte: "... une gorgée d'air encore... et une longue expiration.", pause: 7000 },
-    { texte: "La surface sous toi est là. Tu entends ma voix.", pause: 3000 },
-    { texte: "Et à chaque expiration, quelque chose descend.", pause: 5000 },
-    { texte: "Ton sankalpa. Une intention simple. Vraie. Au présent.", pause: 4000 },
-    { texte: "Répète-la trois fois, intérieurement.", pause: 12000 },
-    { texte: "Scan corporel. Je nomme, tu rejoins — sans forcer.", pause: 4000 },
-    { texte: "Les doigts de la main droite, un par un.", pause: 5000 },
-    { texte: "La paume. Le poignet. L'avant-bras. Le coude. L'épaule droite.", pause: 5000 },
-    { texte: "L'épaule gauche. Le bras. Les doigts de la main gauche.", pause: 5000 },
-    { texte: "La poitrine. Le cœur qui bat pour toi depuis toujours.", pause: 5000 },
-    { texte: "Le ventre. Le bas du dos. Les omoplates.", pause: 5000 },
-    { texte: "La cuisse droite. Le genou. Le mollet. La cheville. Les orteils.", pause: 5000 },
-    { texte: "La cuisse gauche. Le genou. Le mollet. La cheville. Les orteils.", pause: 5000 },
-    { texte: "Le cou. La gorge. Le menton. Les lèvres. Les yeux.", pause: 5000 },
-    { texte: "Le front. Les tempes. Le sommet de la tête.", pause: 5000 },
-    { texte: "Tout le corps. Un tout. Présent. Complet.", pause: 7000 },
-    { texte: "Les opposés.", pause: 3000 },
-    { texte: "Lourdeur... légèreté.", pause: 7000 },
-    { texte: "Chaleur... fraîcheur.", pause: 7000 },
-    { texte: "Joie... tristesse. Tu es assez vaste pour les deux.", pause: 7000 },
-    { texte: "La visualisation maintenant.", pause: 4000 },
-    { texte: "Un lieu de paix absolue. Le tien. Celui qui vient.", pause: 5000 },
-    { texte: "Vois sa lumière. Entends ses sons. Sens son air.", pause: 7000 },
-    { texte: "Tu y es. Totalement. En sécurité.", pause: 12000 },
-    { texte: "Ton sankalpa remonte. Répète-le.", pause: 10000 },
-    { texte: "Reviens doucement. Doigts. Orteils. Bras.", pause: 5000 },
-    { texte: "Une grande inspiration — et ouvre les yeux quand tu es prête.", pause: 5000 },
-    { texte: "Tu reviens entière. La paix reste.", pause: 4000 },
-  ],
-  long: YOGA_NIDRA_LONG,
+  moyen: YOGA_NIDRA_MOYEN,   // "La Rivière qui Rentre à la Mer" — script complet
+  long:  YOGA_NIDRA_LONG,
 };
 
 

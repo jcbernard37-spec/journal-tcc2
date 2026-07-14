@@ -55,6 +55,122 @@ export const YOGA_NIDRA_COURT: Segment[] = [
   { texte: "Tu reviens portant quelque chose. Un peu de silence. Il est à toi.", pause: 3000 },
 ];
 
+/** "La Rivière qui Rentre à la Mer" — 30 min
+ *  Script maître — Huberman (soupir physiologique) + Erickson (Yes Set, suggestion permissive)
+ *  + Kabat-Zinn (présence somatique) + Sealey (immersion VAKOG + métaphore centrale)
+ */
+export const YOGA_NIDRA_MOYEN: Segment[] = [
+  // ── INDUCTION ──────────────────────────────────────────────────────────
+  { texte: "Installe-toi.", pause: 4000 },
+  { texte: "Où que tu sois — allongée, assise, soutenue — laisse simplement le poids de ton corps être accueilli par ce qui est sous toi.", pause: 5000 },
+  { texte: "Tu n'as rien à accomplir dans les prochaines minutes.", pause: 3000 },
+  { texte: "Aucune performance. Aucune bonne façon de le faire.", pause: 3000 },
+  { texte: "Juste... être ici.", pause: 5000 },
+  { texte: "Et ton corps le sait déjà.", pause: 5000 },
+  // Soupir physiologique — Huberman
+  { texte: "Je vais te proposer une chose très simple.", pause: 3000 },
+  { texte: "Une double inspiration.", pause: 2000 },
+  { texte: "Inspire d'abord par le nez...", pause: 3500 },
+  { texte: "puis, sans expirer encore, inspire une petite gorgée d'air supplémentaire.", pause: 2500 },
+  { texte: "Et maintenant... une longue, longue expiration par la bouche.", pause: 7000 },
+  { texte: "Ce geste vient de déclencher quelque chose dans ton système nerveux. Non pas parce que tu l'as décidé. Mais parce que ton corps est câblé pour ça.", pause: 5000 },
+  { texte: "Encore une fois, si tu veux.", pause: 2000 },
+  { texte: "Double inspiration... et un souffle long, lent, qui emporte ce que tu portais.", pause: 8000 },
+  // Yes Set — Erickson
+  { texte: "La surface sous ton dos est là. Tu la perçois — concrète, solide, réelle.", pause: 4000 },
+  { texte: "Tu entends ma voix qui te parvient.", pause: 3000 },
+  { texte: "Et à chaque expiration qui vient, quelque chose en toi commence déjà à descendre.", pause: 5000 },
+  { texte: "Pas parce que tu le cherches. Mais parce que c'est la direction naturelle des choses.", pause: 5000 },
+  { texte: "L'eau descend vers la mer. La nuit descend sur le jour. Et toi...", pause: 3000 },
+  { texte: "...tu peux choisir de descendre aussi.", pause: 6000 },
+  // ── SANKALPA ───────────────────────────────────────────────────────────
+  { texte: "Formule maintenant ton intention pour cette session. Une phrase simple, positive, au présent.", pause: 4000 },
+  { texte: "Peut-être : je suis en paix. Ou : je m'accueille avec douceur. Ou autre chose qui vient.", pause: 5000 },
+  { texte: "Répète-la mentalement. Trois fois. Avec conviction.", pause: 12000 },
+  // ── IMMERSION — La Rivière ─────────────────────────────────────────────
+  { texte: "Imagine — ou laisse venir, sans forcer — l'image d'une rivière.", pause: 5000 },
+  { texte: "Pas nécessairement une rivière que tu as vue. Une rivière intérieure. La tienne.", pause: 5000 },
+  { texte: "Elle coule quelque part en toi depuis toujours.", pause: 4000 },
+  { texte: "Aujourd'hui... elle est tranquille.", pause: 6000 },
+  // VAKOG — Sealey
+  { texte: "Tu es sur la berge de cette rivière.", pause: 4000 },
+  { texte: "Le sol sous tes pieds est couvert d'herbe fraîche — pas parfaite, juste vivante.", pause: 4000 },
+  { texte: "Tu peux sentir la légère humidité de la terre remonter à travers la plante de tes pieds.", pause: 5000 },
+  { texte: "L'air ici est différent. Plus dense. Presque buvable.", pause: 4000 },
+  { texte: "Il porte une odeur que tu connais peut-être — l'eau douce, la terre mouillée, quelque chose de minéral et d'ancien.", pause: 5000 },
+  { texte: "Inspire doucement. Laisse cet air s'installer dans tes poumons comme un hôte familier.", pause: 6000 },
+  { texte: "Et tu entends la rivière. Pas un bruit. Un rythme.", pause: 4000 },
+  { texte: "Un murmure constant, irrégulier juste assez pour être vivant.", pause: 6000 },
+  // ── SCAN CORPOREL — Kabat-Zinn ─────────────────────────────────────────
+  { texte: "Et pendant que ce son t'enveloppe... je t'invite à porter ton attention — doucement, sans effort — vers ton visage.", pause: 5000 },
+  { texte: "Pas pour le contrôler. Juste pour le remarquer.", pause: 4000 },
+  { texte: "Y a-t-il quelque chose là ? Une tension dans la mâchoire ? Un léger froncement entre les sourcils ?", pause: 5000 },
+  { texte: "Tu n'as pas besoin de le résoudre. Juste de le voir.", pause: 4000 },
+  { texte: "Et souvent — pas toujours, mais souvent — quand on pose son attention sur quelque chose, ça se dénoue un peu. Tout seul.", pause: 6000 },
+  { texte: "Comme un nœud dans l'eau qui se défait quand le courant reprend.", pause: 6000 },
+  // Descente vers la rivière — Erickson
+  { texte: "Tu t'approches de l'eau.", pause: 3000 },
+  { texte: "Un pas. L'herbe est plus fraîche. Un autre pas. Le sol devient un peu plus souple.", pause: 5000 },
+  { texte: "Et tu t'assois au bord — ou peut-être que tu te couches, le corps accueilli par la berge comme si elle avait été formée pour toi.", pause: 6000 },
+  { texte: "L'eau effleure peut-être tes chevilles. Elle est fraîche — pas froide. Vivante — pas agitée.", pause: 5000 },
+  { texte: "Et elle coule. Elle coule toujours.", pause: 7000 },
+  // ── LIBÉRATION PAR MÉTAPHORE ────────────────────────────────────────────
+  { texte: "Et maintenant — si tu veux bien — pense à quelque chose que tu portes.", pause: 6000 },
+  { texte: "Pas besoin de l'analyser. Pas besoin de le nommer à voix haute. Juste... le sentir.", pause: 6000 },
+  { texte: "Cette chose qui pèse. Qui revient. Qui tourne.", pause: 5000 },
+  { texte: "Imagine que tu peux la tenir dans ta main. Sous n'importe quelle forme — une pierre, une couleur, une texture.", pause: 5000 },
+  { texte: "Et tu peux, si tu veux, laisser ta main descendre vers l'eau.", pause: 4000 },
+  { texte: "Pas pour jeter. Pas pour fuir. Juste pour laisser l'eau toucher ce que tu portes.", pause: 5000 },
+  { texte: "Et la rivière... la rivière prend.", pause: 4000 },
+  { texte: "Elle ne juge pas ce que tu lui confies. Elle ne demande pas d'explications.", pause: 4000 },
+  { texte: "Elle reçoit, et elle continue de couler.", pause: 7000 },
+  // Confusion légère — Erickson
+  { texte: "Pendant que ton esprit conscient écoutait mes mots, quelque chose d'autre — une partie plus profonde de toi — était déjà en train de relâcher.", pause: 6000 },
+  { texte: "Peut-être que tu le sens. Un léger changement dans la façon dont tes épaules touchent le sol.", pause: 5000 },
+  { texte: "Peut-être pas encore. Et c'est exactement correct aussi.", pause: 7000 },
+  // ── APPROFONDISSEMENT — Compte à rebours ───────────────────────────────
+  { texte: "Je vais compter de cinq à un. À chaque chiffre, tu peux — si tu le sens — descendre un peu plus profondément.", pause: 4000 },
+  { texte: "Cinq. La rivière coule. Tu es sur la berge. Tout est là.", pause: 6000 },
+  { texte: "Quatre. Tes bras sont lourds comme du bois mouillé. Pesants. Doux. Reposés.", pause: 6000 },
+  { texte: "Trois. Ta respiration s'est réglée sur quelque chose de plus ancien que ta pensée. Quelque chose qui sait.", pause: 7000 },
+  { texte: "Deux. L'espace entre tes pensées commence à s'agrandir. Et dans cet espace... il y a quelque chose de calme.", pause: 7000 },
+  { texte: "Un.", pause: 12000 },
+  // ── CŒUR DE LA SESSION ─────────────────────────────────────────────────
+  { texte: "Quelque part, très loin, des pensées peuvent traverser ton esprit.", pause: 4000 },
+  { texte: "Un rappel. Une inquiétude. Un visage. Et c'est bien. C'est le mental qui fait son travail.", pause: 5000 },
+  { texte: "Laisse-les passer sur l'eau comme des feuilles.", pause: 5000 },
+  { texte: "Tu n'es pas les feuilles. Tu es la rivière.", pause: 8000 },
+  // Vérité somatique — Kabat-Zinn
+  { texte: "En dessous de tout ce qui bouge en toi — les pensées, les émotions, les plans, les regrets — il y a quelque chose de fixe.", pause: 5000 },
+  { texte: "Une présence. Ton souffle. Ton cœur. Le sol.", pause: 5000 },
+  { texte: "Ces choses-là ne t'ont jamais abandonnée. Pas une fois, dans toute ta vie.", pause: 5000 },
+  { texte: "Et elles ne le feront pas maintenant.", pause: 8000 },
+  // Ancrage sensoriel profond
+  { texte: "Sens le poids de ton corps. Vraiment.", pause: 4000 },
+  { texte: "Là où tu touches la surface sous toi — les talons, le dos, les omoplates — laisse la gravité faire ce qu'elle sait faire.", pause: 5000 },
+  { texte: "Tu n'as pas à te tenir. Tu n'as pas à être forte ici.", pause: 5000 },
+  { texte: "Tu peux être simplement... tenue.", pause: 10000 },
+  // ── INTÉGRATION — L'Ancrage ────────────────────────────────────────────
+  { texte: "Dans quelques instants, je vais te proposer quelque chose à garder. Pas une pensée. Un geste.", pause: 5000 },
+  { texte: "Porte ta main — une seule — doucement sur ta poitrine.", pause: 5000 },
+  { texte: "Sens ton cœur sous ta paume.", pause: 5000 },
+  { texte: "Il bat. Il bat depuis le début. Il bat sans que tu lui demandes.", pause: 5000 },
+  { texte: "Ce geste — cette main sur ton cœur — peut devenir une clé.", pause: 4000 },
+  { texte: "Chaque fois que le monde autour de toi deviendra trop rapide, trop bruyant, trop exigeant... pose cette main là.", pause: 5000 },
+  { texte: "Et ta mémoire du corps retrouvera ce que tu as touché ici. Cette rivière. Cette berge. Ce silence qui n'est pas vide, mais plein.", pause: 7000 },
+  // ── RETOUR ──────────────────────────────────────────────────────────────
+  { texte: "Il est temps de revenir maintenant. Pas avec un sursaut. Juste... un déplacement.", pause: 4000 },
+  { texte: "Commence par remarquer tes doigts. Sans les bouger encore — juste les remarquer.", pause: 5000 },
+  { texte: "Et maintenant, si tu veux, un tout petit mouvement. Juste les bouts des doigts. Une ondulation douce.", pause: 5000 },
+  { texte: "Et les orteils. Ce même mouvement minuscule, vivant.", pause: 5000 },
+  { texte: "Une dernière double inspiration pour le retour.", pause: 2000 },
+  { texte: "Inspire... encore une gorgée d'air... et un long souffle vers l'extérieur.", pause: 7000 },
+  { texte: "Tu peux commencer à percevoir la pièce autour de toi. Les sons. La lumière derrière tes paupières.", pause: 5000 },
+  { texte: "Ouvre les yeux quand tu te sens prête. Pas avant, jamais avant.", pause: 7000 },
+  { texte: "La rivière est toujours là. Elle coule en toi, même maintenant.", pause: 4000 },
+  { texte: "Elle coule. Et toi, tu sais maintenant où elle est.", pause: 4000 },
+];
+
 /** "Les Profondeurs du Lac" — 60 min */
 export const YOGA_NIDRA_LONG: Segment[] = [
   { texte: "Bienvenue dans cette immersion profonde.", pause: 3000 },

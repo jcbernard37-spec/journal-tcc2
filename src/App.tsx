@@ -38,7 +38,7 @@ function Nav({ theme, setTheme }: { theme: Theme; setTheme: (t: Theme) => void }
   return (
     <nav className="nav no-print">
       <div className="nav-inner">
-        <Link to="/" className="nav-marque" onClick={fermer}>🌿 Journal TCC</Link>
+        <Link to="/" className="nav-marque" onClick={fermer}><span style={{fontFamily:"'Fraunces', serif", letterSpacing:"-0.02em"}}>Solco</span></Link>
 
         {/* Desktop */}
         <div className="nav-liens">
