@@ -43,7 +43,7 @@ export default function Onboarding() {
               />
             </div>
             <button className="btn btn-primaire" disabled={!prenom.trim()} onClick={() => setEtape(1)}>
-              Continuer →
+              Continuer
             </button>
           </div>
         )}
@@ -85,7 +85,7 @@ export default function Onboarding() {
             <div style={{ display: 'flex', gap: '0.7rem', marginTop: '1rem' }}>
               <button className="btn btn-doux" onClick={() => setEtape(0)}>← Retour</button>
               <button className="btn btn-primaire" disabled={!gad7Complet} onClick={() => setEtape(2)}>
-                Continuer →
+                Continuer
               </button>
             </div>
           </div>

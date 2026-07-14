@@ -33,7 +33,7 @@ export default function FeuillesHub() {
                       {f.accroche}
                     </p>
                   </div>
-                  <span style={{ color: f.couleur, fontWeight: 800, whiteSpace: 'nowrap' }}>Ouvrir →</span>
+                  <span style={{ color: f.couleur, fontWeight: 800, whiteSpace: 'nowrap' }}>Ouvrir</span>
                 </div>
               </div>
             );

@@ -55,7 +55,7 @@ export default function SOS() {
             )}
             {!derniere && etape > 0 ? (
               <button className="btn btn-primaire" onClick={() => setEtape(e => e + 1)}>
-                C'est fait, étape suivante →
+                C'est fait, étape suivante
               </button>
             ) : etape > 0 ? (
               <>

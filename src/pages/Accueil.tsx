@@ -134,7 +134,7 @@ export default function Accueil() {
 
         <div style={{ display: 'flex', gap: '0.8rem', justifyContent: 'center', marginTop: '2rem', flexWrap: 'wrap' }}>
           <button className="btn btn-primaire" onClick={() => setMessages([{ role: 'assistant', content: 'Bonjour ! 👋 Je suis ton assistant TCC. Qu\'est-ce que tu fais là aujourd\'hui ? Qu\'est-ce que tu ressens en ce moment ?' }])}>
-            Parler à l'assistant →
+            Parler à l'assistant
           </button>
           <button className="btn btn-contour" onClick={() => navigate('/onboarding')}>
             Commencer mon profil

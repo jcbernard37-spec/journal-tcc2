@@ -88,7 +88,7 @@ export default function Suivi() {
           <div className="carte" style={{ textAlign: 'center', padding: '2rem 1rem' }}>
             <p style={{ color: 'var(--encre-3)' }}>Aucune entrée pour l'instant.</p>
             <button className="btn btn-primaire" onClick={() => navigate('/feuilles')} style={{ marginTop: '1rem' }}>
-              Commencer une feuille →
+              Commencer une feuille
             </button>
           </div>
         ) : (
@@ -227,7 +227,7 @@ export default function Suivi() {
                   navigate(`/feuille/${entreeSelectionnee.feuille}`);
                   setEntreeSelectionnee(null);
                 }}>
-                  Éditer cette entrée →
+                  Éditer cette entrée
                 </button>
               </div>
             </div>

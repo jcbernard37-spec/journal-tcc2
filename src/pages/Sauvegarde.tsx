@@ -129,10 +129,10 @@ export default function Sauvegarde() {
               Crée un nouveau projet : « Journal TCC »
             </li>
             <li>
-              Cherche « Google Drive API » → **ENABLE**
+              Cherche « Google Drive API » **ENABLE**
             </li>
             <li>
-              Va à **Credentials** → **Create Credentials** → **OAuth 2.0 Client ID**
+              Va à **Credentials** **Create Credentials** **OAuth 2.0 Client ID**
               <ul style={{ marginTop: '0.4rem', marginLeft: '1rem' }}>
                 <li>Type : **Web application**</li>
                 <li>Authorized JavaScript origins : <code>http://localhost:5173</code></li>
@@ -169,7 +169,7 @@ export default function Sauvegarde() {
             Vercel te permet d'avoir une URL publique pour ton app, accessible partout.
           </p>
           <ol style={{ color: 'var(--encre-2)', paddingLeft: '1.2rem', lineHeight: 1.8 }}>
-            <li>Va sur <strong><a href="https://vercel.com" target="_blank" rel="noopener">vercel.com</a></strong> → Sign up avec GitHub</li>
+            <li>Va sur <strong><a href="https://vercel.com" target="_blank" rel="noopener">vercel.com</a></strong> Sign up avec GitHub</li>
             <li>Crée un repo GitHub : `journal-tcc`</li>
             <li>Mets ton code dedans (git push)</li>
             <li>Vercel l'importera automatiquement, déploiera, et te donnera une URL : `https://journal-tcc.vercel.app`</li>
