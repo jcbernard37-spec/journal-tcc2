@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { jouerScriptGuidé, arreter, mettreEnPause, reprendre } from '../lib/voiceGuide';
+import { getZenPlayer } from '../lib/zenMusic';
 
 type Duree = 'court' | 'moyen' | 'long';
 
@@ -168,6 +169,9 @@ export default function YogaNidra() {
     };
   }, []);
 
+  const [volumeMusique, setVolumeMusique] = useState(0.4);
+  const zenPlayer = getZenPlayer();
+
   const demarrer = () => {
     if (!duree) return;
     const script = SCRIPTS[duree];
@@ -176,34 +180,43 @@ export default function YogaNidra() {
     setEnCours(true);
     setPhase('session');
 
-    // Timer
+    // Démarre la musique zen en arrière-plan
+    zenPlayer.play(volumeMusique);
+
+    // Lance la voix après 4 sec (laisse la musique s'installer)
     intervalRef.current = setInterval(() => {
       setTempsSession(t => t + 1);
     }, 1000);
 
-    jouerScriptGuidé(
-      script,
-      (index, total) => setProgres(index),
-      () => {
-        setEnCours(false);
-        if (intervalRef.current) clearInterval(intervalRef.current);
-        setPhase('apres');
-      }
-    );
+    setTimeout(() => {
+      jouerScriptGuidé(
+        script,
+        (index, total) => setProgres(index),
+        () => {
+          setEnCours(false);
+          if (intervalRef.current) clearInterval(intervalRef.current);
+          zenPlayer.stop();
+          setPhase('apres');
+        }
+      );
+    }, 4000);
   };
 
   const togglePause = () => {
     if (enPauseEtat) {
       reprendre();
+      zenPlayer.play(volumeMusique);
       setEnPauseEtat(false);
     } else {
       mettreEnPause();
+      zenPlayer.stop();
       setEnPauseEtat(true);
     }
   };
 
   const terminer = () => {
     arreter();
+    zenPlayer.stop();
     if (intervalRef.current) clearInterval(intervalRef.current);
     setEnCours(false);
     setPhase('apres');
@@ -297,8 +310,18 @@ export default function YogaNidra() {
               <span style={{ fontSize: '0.8rem', color: 'var(--encre-3)' }}>10 — Pleine d'énergie</span>
             </div>
 
-            <div style={{ background: 'var(--accent-pale)', padding: '1rem', borderRadius: '10px', marginBottom: '1.5rem', color: 'var(--accent-fonce)', fontSize: '0.9rem' }}>
-              🎙️ La voix guidée démarrera automatiquement. Mets le volume de ton appareil à un niveau confortable.
+            <div style={{ background: 'var(--accent-pale)', padding: '1.1rem', borderRadius: '10px', marginBottom: '1rem', color: 'var(--accent-fonce)', fontSize: '0.9rem' }}>
+              🎵 Musique zen générée + 🎙️ voix guidée démarrent automatiquement.
+            </div>
+
+            <div style={{ marginBottom: '1.5rem' }}>
+              <label style={{ fontSize: '0.85rem', color: 'var(--encre-2)', display: 'flex', justifyContent: 'space-between', marginBottom: '0.4rem' }}>
+                <span>🎵 Volume musique de fond</span>
+                <span style={{ fontWeight: 700, color: 'var(--accent)' }}>{Math.round(volumeMusique * 100)}%</span>
+              </label>
+              <input type="range" min={0} max={1} step={0.05} value={volumeMusique}
+                onChange={e => setVolumeMusique(+e.target.value)}
+                style={{ width: '100%', accentColor: 'var(--accent)' }} />
             </div>
 
             <div style={{ display: 'flex', gap: '0.75rem' }}>
@@ -342,9 +365,19 @@ export default function YogaNidra() {
               }} />
             </div>
 
-            <p style={{ color: 'var(--encre-2)', marginBottom: '2rem', fontSize: '0.9rem' }}>
-              {enPauseEtat ? '⏸ En pause' : '🎙️ Voix guidée en cours...'}
+            <p style={{ color: 'var(--encre-2)', marginBottom: '1rem', fontSize: '0.9rem' }}>
+              {enPauseEtat ? '⏸ En pause' : '🎵 Musique zen  ·  🎙️ Voix guidée'}
             </p>
+
+            <div style={{ maxWidth: 260, margin: '0 auto 1.5rem' }}>
+              <label style={{ fontSize: '0.8rem', color: 'var(--encre-3)', display: 'flex', justifyContent: 'space-between', marginBottom: '0.3rem' }}>
+                <span>🎵 Musique</span>
+                <span>{Math.round(volumeMusique * 100)}%</span>
+              </label>
+              <input type="range" min={0} max={1} step={0.05} value={volumeMusique}
+                onChange={e => { setVolumeMusique(+e.target.value); zenPlayer.setVolume(+e.target.value); }}
+                style={{ width: '100%', accentColor: 'var(--accent)' }} />
+            </div>
 
             <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'center' }}>
               <button onClick={togglePause}

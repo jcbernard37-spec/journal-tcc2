@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { jouerScriptGuidé, arreter, mettreEnPause, reprendre } from '../lib/voiceGuide';
+import { getZenPlayer } from '../lib/zenMusic';
 
 type Niveau = 'relaxation' | 'croyance' | 'ressource';
 
@@ -104,7 +105,8 @@ export default function Hypnose() {
     ressource:  { label: 'Ancrer une ressource',    desc: 'Accède à ta force intérieure à volonté',     duree: '~20 min', icon: '💎' },
   };
 
-  useEffect(() => () => { arreter(); if (intervalRef.current) clearInterval(intervalRef.current); }, []);
+  const zenPlayer = getZenPlayer();
+  useEffect(() => () => { arreter(); zenPlayer.stop(); if (intervalRef.current) clearInterval(intervalRef.current); }, []);
 
   const demarrer = () => {
     if (!niveau) return;
@@ -112,15 +114,21 @@ export default function Hypnose() {
     setTotal(script.length);
     setPhase('session');
     intervalRef.current = setInterval(() => setTempsSession(t => t + 1), 1000);
-    jouerScriptGuidé(script, (i) => setProgres(i), () => {
-      if (intervalRef.current) clearInterval(intervalRef.current);
-      setPhase('apres');
-    });
+
+    // Musique douce en fond, voix après 3 sec
+    zenPlayer.play(0.3);
+    setTimeout(() => {
+      jouerScriptGuidé(script, (i) => setProgres(i), () => {
+        if (intervalRef.current) clearInterval(intervalRef.current);
+        zenPlayer.stop();
+        setPhase('apres');
+      });
+    }, 3000);
   };
 
   const togglePause = () => {
-    if (enPauseEtat) { reprendre(); setEnPauseEtat(false); }
-    else { mettreEnPause(); setEnPauseEtat(true); }
+    if (enPauseEtat) { reprendre(); zenPlayer.play(0.3); setEnPauseEtat(false); }
+    else { mettreEnPause(); zenPlayer.stop(); setEnPauseEtat(true); }
   };
 
   const sauvegarder = () => {
@@ -185,7 +193,7 @@ export default function Hypnose() {
               <button onClick={togglePause} style={{ padding: '0.85rem 1.5rem', borderRadius: '999px', background: 'var(--bg-2)', border: '1.5px solid var(--carte-border)', fontWeight: 700, cursor: 'pointer', color: 'var(--encre)' }}>
                 {enPauseEtat ? '▶ Reprendre' : '⏸ Pause'}
               </button>
-              <button onClick={() => { arreter(); if (intervalRef.current) clearInterval(intervalRef.current); setPhase('apres'); }}
+              <button onClick={() => { arreter(); zenPlayer.stop(); if (intervalRef.current) clearInterval(intervalRef.current); setPhase('apres'); }}
                 style={{ padding: '0.85rem 1.5rem', borderRadius: '999px', background: 'var(--chaud-pale)', border: '1.5px solid var(--chaud)', fontWeight: 600, cursor: 'pointer', color: 'var(--chaud)' }}>
                 Terminer
               </button>

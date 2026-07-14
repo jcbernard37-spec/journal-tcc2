@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { jouerScriptGuidé, arreter, mettreEnPause, reprendre } from '../lib/voiceGuide';
+import { getZenPlayer } from '../lib/zenMusic';
 
 type Outil = 'tapping' | 'coherence' | 'meditation' | 'affirmations';
 
@@ -117,7 +118,11 @@ export default function OutilsBonus() {
   const [tempsSession, setTempsSession] = useState(0);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
-  useEffect(() => () => { arreter(); if (intervalRef.current) clearInterval(intervalRef.current); }, []);
+  const zenPlayer = getZenPlayer();
+  // Outils avec musique de fond (méditation et affirmations)
+  const AVEC_MUSIQUE: Outil[] = ['meditation', 'affirmations', 'coherence'];
+
+  useEffect(() => () => { arreter(); zenPlayer.stop(); if (intervalRef.current) clearInterval(intervalRef.current); }, []);
 
   const demarrer = (o: Outil) => {
     setOutil(o);
@@ -125,15 +130,35 @@ export default function OutilsBonus() {
     setTotal(cfg.script.length);
     setPhase('session');
     intervalRef.current = setInterval(() => setTempsSession(t => t + 1), 1000);
-    jouerScriptGuidé(cfg.script, (i) => setProgres(i), () => {
-      if (intervalRef.current) clearInterval(intervalRef.current);
-      setPhase('apres');
-    });
+
+    // Musique de fond pour méditation / affirmations / cohérence
+    if (AVEC_MUSIQUE.includes(o)) {
+      zenPlayer.play(0.35);
+      setTimeout(() => {
+        jouerScriptGuidé(cfg.script, (i) => setProgres(i), () => {
+          if (intervalRef.current) clearInterval(intervalRef.current);
+          zenPlayer.stop();
+          setPhase('apres');
+        });
+      }, 3000);
+    } else {
+      jouerScriptGuidé(cfg.script, (i) => setProgres(i), () => {
+        if (intervalRef.current) clearInterval(intervalRef.current);
+        setPhase('apres');
+      });
+    }
   };
 
   const togglePause = () => {
-    if (enPauseEtat) { reprendre(); setEnPauseEtat(false); }
-    else { mettreEnPause(); setEnPauseEtat(true); }
+    if (enPauseEtat) {
+      reprendre();
+      if (outil && AVEC_MUSIQUE.includes(outil)) zenPlayer.play(0.35);
+      setEnPauseEtat(false);
+    } else {
+      mettreEnPause();
+      zenPlayer.stop();
+      setEnPauseEtat(true);
+    }
   };
 
   const sauvegarder = () => {
@@ -141,6 +166,7 @@ export default function OutilsBonus() {
     const arr = JSON.parse(localStorage.getItem('tcc_sessions_therapie') || '[]');
     arr.push(s);
     localStorage.setItem('tcc_sessions_therapie', JSON.stringify(arr));
+    zenPlayer.stop();
     setPhase('choix');
     setOutil(null);
     setTempsSession(0);
