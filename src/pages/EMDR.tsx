@@ -1,24 +1,12 @@
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { jouerScriptGuidé, arreter } from '../lib/voiceGuide';
+import { EMDR_GUIDANCE } from '../data/scriptsTherapeutiques';
 import SOSFlottant from '../lib/SOSFlottant';
 
 type Phase = 'disclaimer' | 'suds' | 'processing' | 'post';
 
-// Script vocal EMDR — espacé, discret, sans surcharger l'expérience visuelle
-const SCRIPT_EMDR = [
-  { texte: "Concentre-toi sur ce souvenir ou cette peur. Observe l'image, les sensations, les émotions.", pause: 9000 },
-  { texte: "Commence à suivre le mouvement.", pause: 10000 },
-  { texte: "Observe simplement ce qui vient. Pensées, images, sensations. Sans forcer.", pause: 12000 },
-  { texte: "Laisse aller.", pause: 10000 },
-  { texte: "Continue à suivre. Tu fais très bien.", pause: 10000 },
-  { texte: "Note ce qui se passe, sans t'y accrocher.", pause: 12000 },
-  { texte: "Tu es en sécurité ici.", pause: 8000 },
-  { texte: "Continue à observer.", pause: 15000 },
-  { texte: "Laisse venir ce qui doit venir.", pause: 10000 },
-  { texte: "Presque terminé. Encore quelques instants.", pause: 10000 },
-  { texte: "Prends une pause maintenant. Respire profondément. Que remarques-tu ?", pause: 3000 },
-];
+const SCRIPT_EMDR = EMDR_GUIDANCE;
 
 export default function EMDR() {
   const navigate = useNavigate();

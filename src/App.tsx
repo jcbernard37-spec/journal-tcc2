@@ -107,7 +107,12 @@ function App() {
     localStorage.setItem('tcc_theme', theme);
   }, [theme]);
 
-  const setTheme = (t: Theme) => setThemeState(t);
+  const setTheme = (t: Theme) => {
+    // Application immédiate (pas besoin d'attendre le useEffect)
+    document.documentElement.setAttribute('data-theme', t);
+    localStorage.setItem('tcc_theme', t);
+    setThemeState(t);
+  };
 
   return (
     <BrowserRouter>

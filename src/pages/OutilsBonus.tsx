@@ -1,112 +1,19 @@
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { jouerScriptGuidé, arreter, mettreEnPause, reprendre } from '../lib/voiceGuide';
+import { TAPPING_EFT, COHERENCE_CARDIAQUE, MEDITATION_BIENVEILLANCE, AFFIRMATIONS_GUIDEES } from '../data/scriptsTherapeutiques';
 import { getZenPlayer } from '../lib/zenMusic';
 import SOSFlottant from '../lib/SOSFlottant';
 
 type Outil = 'tapping' | 'coherence' | 'meditation' | 'affirmations';
 
-const TAPPING = [
-  { texte: "Bienvenue dans cette session de tapping EFT. Pense à quelque chose qui te cause du stress en ce moment. Donne-lui un niveau de 0 à 10.", pause: 6000 },
-  { texte: "Nous allons commencer par la phrase de setup. Tape le côté de ta main — la partie charnue sous le petit doigt — et répète avec moi :", pause: 3000 },
-  { texte: "Même si je ressens ce stress, je m'accepte complètement et profondément.", pause: 4000 },
-  { texte: "Encore. Même si je ressens ce stress, je m'accepte complètement et profondément.", pause: 4000 },
-  { texte: "Une dernière fois. Même si je ressens ce stress, je m'accepte complètement et profondément.", pause: 4000 },
-  { texte: "Maintenant, tape le sommet de ta tête. Sept à neuf petits tapotements doux. Ce stress que je ressens.", pause: 4000 },
-  { texte: "Le début du sourcil, côté intérieur. Ce stress dans mon corps.", pause: 4000 },
-  { texte: "Le côté de l'œil, sur l'os. Cette tension que je porte.", pause: 4000 },
-  { texte: "Sous l'œil, sur la pommette. Je reconnais ce que je ressens.", pause: 4000 },
-  { texte: "Sous le nez. Il est normal de ressentir ça.", pause: 4000 },
-  { texte: "Le menton, dans le creux. J'accueille ces émotions.", pause: 4000 },
-  { texte: "La clavicule. Je me donne la permission de lâcher.", pause: 4000 },
-  { texte: "Sous l'aisselle, sur la côte. Je relâche ce stress maintenant.", pause: 4000 },
-  { texte: "Retour au sommet de la tête. Je me sens de plus en plus calme.", pause: 4000 },
-  { texte: "Le sourcil. Plus légère.", pause: 4000 },
-  { texte: "Le côté de l'œil. Libérée.", pause: 4000 },
-  { texte: "Sous l'œil. En sécurité.", pause: 4000 },
-  { texte: "Sous le nez. En paix.", pause: 4000 },
-  { texte: "Le menton. Je m'accepte.", pause: 4000 },
-  { texte: "La clavicule. Je suis bien.", pause: 4000 },
-  { texte: "Sous l'aisselle. Je lâche prise.", pause: 4000 },
-  { texte: "Prends une grande inspiration. Expire complètement. Comment est ton niveau de stress maintenant, de 0 à 10 ? Il devrait avoir diminué.", pause: 6000 },
-  { texte: "Tu peux répéter ce cycle autant de fois que nécessaire. Le tapping fonctionne — continue !", pause: 3000 },
-];
-
-const COHERENCE = [
-  { texte: "Bienvenue dans la cohérence cardiaque. Cinq secondes d'inspiration, cinq secondes d'expiration, pendant cinq minutes.", pause: 3000 },
-  { texte: "Assieds-toi droite, les deux pieds au sol. Détends tes épaules.", pause: 4000 },
-  { texte: "Inspire lentement... un... deux... trois... quatre... cinq.", pause: 6000 },
-  { texte: "Expire lentement... un... deux... trois... quatre... cinq.", pause: 6000 },
-  { texte: "Inspire... deux... trois... quatre... cinq.", pause: 6000 },
-  { texte: "Expire... deux... trois... quatre... cinq.", pause: 6000 },
-  { texte: "Inspire... deux... trois... quatre... cinq.", pause: 6000 },
-  { texte: "Expire... deux... trois... quatre... cinq.", pause: 6000 },
-  { texte: "Très bien. Continue à ce rythme. Inspire... deux... trois... quatre... cinq.", pause: 6000 },
-  { texte: "Expire... deux... trois... quatre... cinq.", pause: 6000 },
-  { texte: "Inspire... deux... trois... quatre... cinq.", pause: 6000 },
-  { texte: "Expire... deux... trois... quatre... cinq.", pause: 6000 },
-  { texte: "Inspire... deux... trois... quatre... cinq.", pause: 6000 },
-  { texte: "Expire... deux... trois... quatre... cinq.", pause: 6000 },
-  { texte: "Inspire... deux... trois... quatre... cinq.", pause: 6000 },
-  { texte: "Expire... deux... trois... quatre... cinq.", pause: 6000 },
-  { texte: "Inspire... deux... trois... quatre... cinq.", pause: 6000 },
-  { texte: "Expire... deux... trois... quatre... cinq.", pause: 6000 },
-  { texte: "Inspire... deux... trois... quatre... cinq.", pause: 6000 },
-  { texte: "Expire... deux... trois... quatre... cinq.", pause: 6000 },
-  { texte: "Inspire... deux... trois... quatre... cinq.", pause: 6000 },
-  { texte: "Expire... deux... trois... quatre... cinq.", pause: 6000 },
-  { texte: "Inspire... deux... trois... quatre... cinq.", pause: 6000 },
-  { texte: "Expire... deux... trois... quatre... cinq.", pause: 6000 },
-  { texte: "Excellente pratique. Cinq minutes de cohérence cardiaque régulent ton système nerveux pour les heures qui suivent. Prends une dernière grande inspiration, et reviens doucement.", pause: 4000 },
-];
-
-const MEDITATION = [
-  { texte: "Méditation de bienveillance. Assieds-toi confortablement. Ferme les yeux.", pause: 3000 },
-  { texte: "Commence par t'offrir à toi-même de la bienveillance. Place la main sur ton cœur.", pause: 4000 },
-  { texte: "Répète mentalement : que je sois heureuse.", pause: 4000 },
-  { texte: "Que je sois en bonne santé.", pause: 4000 },
-  { texte: "Que je sois en sécurité.", pause: 4000 },
-  { texte: "Que je vive dans la paix.", pause: 5000 },
-  { texte: "Pense maintenant à quelqu'un que tu aimes. Un être cher.", pause: 4000 },
-  { texte: "Envoie-lui : que tu sois heureuse ou heureux.", pause: 4000 },
-  { texte: "Que tu sois en bonne santé.", pause: 4000 },
-  { texte: "Que tu sois en sécurité.", pause: 4000 },
-  { texte: "Que tu vives dans la paix.", pause: 5000 },
-  { texte: "Étends maintenant cette bienveillance à toutes les personnes que tu connais.", pause: 4000 },
-  { texte: "Que vous soyez heureuses.", pause: 4000 },
-  { texte: "Que vous soyez en bonne santé.", pause: 4000 },
-  { texte: "Que vous soyez en sécurité.", pause: 4000 },
-  { texte: "Que vous viviez dans la paix.", pause: 5000 },
-  { texte: "Étends maintenant cette bienveillance à tous les êtres vivants. Partout dans le monde.", pause: 4000 },
-  { texte: "Que tous les êtres soient heureux. En bonne santé. En sécurité. En paix.", pause: 6000 },
-  { texte: "Reviens à toi-même. Sens la chaleur dans ta poitrine.", pause: 4000 },
-  { texte: "Ouvre les yeux doucement. Tu portes cette bienveillance avec toi.", pause: 3000 },
-];
-
-const AFFIRMATIONS = [
-  { texte: "Session d'affirmations. Prends une grande inspiration.", pause: 4000 },
-  { texte: "Ces affirmations sont des vérités que tu choisis de cultiver. Répète-les mentalement ou à voix haute.", pause: 4000 },
-  { texte: "Je suis digne d'amour et de respect.", pause: 4000 },
-  { texte: "Je fais de mon mieux, et c'est suffisant.", pause: 4000 },
-  { texte: "Je mérite la paix et le bonheur.", pause: 4000 },
-  { texte: "Je suis capable de traverser les épreuves.", pause: 4000 },
-  { texte: "Je m'accepte telle que je suis, en ce moment.", pause: 4000 },
-  { texte: "Je suis en sécurité.", pause: 4000 },
-  { texte: "Mes émotions sont valides.", pause: 4000 },
-  { texte: "Je grandis et j'apprends à chaque défi.", pause: 4000 },
-  { texte: "Je mérite le repos.", pause: 4000 },
-  { texte: "Je suis plus forte que mes peurs.", pause: 4000 },
-  { texte: "Je me fais confiance.", pause: 4000 },
-  { texte: "Je suis assez.", pause: 5000 },
-  { texte: "Choisis maintenant l'affirmation qui t'a le plus touchée. Répète-la trois fois.", pause: 10000 },
-  { texte: "Porte-la avec toi aujourd'hui.", pause: 3000 },
-];
+// Scripts importés depuis scriptsTherapeutiques.ts
 
 const OUTILS_CONFIG: Record<Outil, { titre: string; desc: string; icon: string; couleur: string; script: {texte: string; pause: number}[] }> = {
-  tapping:      { titre: 'Tapping EFT',         desc: 'Libère le stress point par point', icon: '🫆', couleur: '#FF6B6B', script: TAPPING },
-  coherence:    { titre: 'Cohérence Cardiaque',  desc: '5 min pour réguler le système nerveux', icon: '💓', couleur: '#4ECDC4', script: COHERENCE },
-  meditation:   { titre: 'Méditation Bienveillance', desc: 'Metta — cultivar la compassion', icon: '🙏', couleur: '#9D84B7', script: MEDITATION },
-  affirmations: { titre: 'Affirmations Guidées', desc: 'Renforce tes nouvelles croyances', icon: '✨', couleur: '#FFD93D', script: AFFIRMATIONS },
+  tapping:      { titre: 'Tapping EFT',         desc: 'Libère le stress point par point', icon: '🫆', couleur: '#FF6B6B', script: TAPPING_EFT },
+  coherence:    { titre: 'Cohérence Cardiaque',  desc: '5 min pour réguler le système nerveux', icon: '💓', couleur: '#4ECDC4', script: COHERENCE_CARDIAQUE },
+  meditation:   { titre: 'Méditation Bienveillance', desc: 'Metta — cultivar la compassion', icon: '🙏', couleur: '#9D84B7', script: MEDITATION_BIENVEILLANCE },
+  affirmations: { titre: 'Affirmations Guidées', desc: 'Renforce tes nouvelles croyances', icon: '✨', couleur: '#FFD93D', script: AFFIRMATIONS_GUIDEES },
 };
 
 export default function OutilsBonus() {

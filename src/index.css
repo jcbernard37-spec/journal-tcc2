@@ -33,50 +33,52 @@
 
 /* ── Thème Japon (Jardin Zen : sable, pierre, mousse) ── */
 [data-theme="japon"] {
-  --bg:          #F4EFE6;
-  --bg-2:        #EBE4D8;
-  --blanc:       #FBF8F4;
-  --encre:       #2A2118;
-  --encre-2:     #5C4F3D;
-  --encre-3:     #9A8C7A;
-  --accent:      #4E6042;
-  --accent-fonce:#3A4F30;
-  --accent-pale: #DDE8D8;
-  --chaud:       #8B6347;
-  --chaud-pale:  #F0E4D6;
-  --crise:       #9B4A3A;
-  --crise-pale:  #F4E0DA;
-  --bleu:        #4A5E72;
-  --bleu-pale:   #DCE8F0;
-  --nav-bg:      rgba(244,239,230,0.97);
-  --nav-border:  #DDD6C8;
-  --carte-bg:    #FBF8F4;
-  --carte-border:#DDD6C6;
-  --ombre:       0 2px 14px rgba(42,33,24,0.08), 0 1px 3px rgba(42,33,24,0.05);
+  /* Jardin zen : sable doré, pierres grises, mousse profonde */
+  --bg:          #E8E0CA;
+  --bg-2:        #DDD4B8;
+  --blanc:       #F5EFE0;
+  --encre:       #1E1408;
+  --encre-2:     #4A3A20;
+  --encre-3:     #8A7A60;
+  --accent:      #3D5228;
+  --accent-fonce:#2A3A18;
+  --accent-pale: #CCDAB8;
+  --chaud:       #8B5E30;
+  --chaud-pale:  #EDD8B8;
+  --crise:       #8B3A2A;
+  --crise-pale:  #EED8D2;
+  --bleu:        #3A5060;
+  --bleu-pale:   #C8DCE8;
+  --nav-bg:      rgba(232,224,202,0.98);
+  --nav-border:  #C8BC98;
+  --carte-bg:    #F0EAD8;
+  --carte-border:#CEBF9A;
+  --ombre:       0 2px 14px rgba(30,20,8,0.10), 0 1px 3px rgba(30,20,8,0.06);
 }
 
 /* ── Thème Bouddha (Forêt Sacrée : vert profond, or) ── */
 [data-theme="bouddha"] {
-  --bg:          #EEF4EE;
-  --bg-2:        #E2EEE2;
-  --blanc:       #F6FBF6;
-  --encre:       #162A18;
-  --encre-2:     #3A5C3E;
-  --encre-3:     #7A9A7E;
-  --accent:      #2D6B44;
-  --accent-fonce:#1E5030;
-  --accent-pale: #D4EBD8;
-  --chaud:       #B8890A;
-  --chaud-pale:  #FBF0CC;
-  --crise:       #9B3A2A;
-  --crise-pale:  #F4DDD8;
-  --bleu:        #2A5A6A;
-  --bleu-pale:   #D4EBF2;
-  --nav-bg:      rgba(238,244,238,0.97);
-  --nav-border:  #C8DEC8;
-  --carte-bg:    #F6FBF6;
-  --carte-border:#C8DEC8;
-  --ombre:       0 2px 14px rgba(22,42,24,0.08), 0 1px 3px rgba(22,42,24,0.05);
+  /* Forêt sacrée : vert prononcé, feuillage riche, or des boudhas */
+  --bg:          #D8ECD8;
+  --bg-2:        #C8E0C8;
+  --blanc:       #E8F5E8;
+  --encre:       #0C1E10;
+  --encre-2:     #2A4830;
+  --encre-3:     #608060;
+  --accent:      #1E6838;
+  --accent-fonce:#145028;
+  --accent-pale: #B8DEC8;
+  --chaud:       #A07808;
+  --chaud-pale:  #F0E4A8;
+  --crise:       #8A3020;
+  --crise-pale:  #EAD0C8;
+  --bleu:        #205870;
+  --bleu-pale:   #B8D8E8;
+  --nav-bg:      rgba(216,236,216,0.98);
+  --nav-border:  #A8CCA8;
+  --carte-bg:    #E0F0E0;
+  --carte-border:#A8CCA8;
+  --ombre:       0 2px 14px rgba(12,30,16,0.10), 0 1px 3px rgba(12,30,16,0.06);
 }
 
 /* ── Thème Bambou (Nuit Zen : sombre, bougies, or) ── */
@@ -186,9 +188,9 @@ h3 { font-size: 1.15rem; }
 }
 .theme-btn:hover { transform: scale(1.2); }
 .theme-btn.actif { border-color: var(--encre); transform: scale(1.15); }
-.theme-btn-zen    { background: #4A7A6F; }
-.theme-btn-japon  { background: #4E6042; }
-.theme-btn-bouddha{ background: #2D6B44; }
+.theme-btn-zen    { background: #4A7A6F; }        /* vert sauge */
+.theme-btn-japon  { background: #C8A055; }        /* or sable */
+.theme-btn-bouddha{ background: #3A9A50; }        /* vert forêt vif */
 .theme-btn-bambou { background: #1A2E16; border: 2px solid #E8C840; }
 
 /* ═══ MOBILE NAV ══════════════════════════════════════ */
@@ -231,8 +233,8 @@ h3 { font-size: 1.15rem; }
 .theme-btn-lg:hover { transform: scale(1.15); }
 .theme-btn-lg.actif { border-color: var(--encre); }
 .theme-btn-lg.zen     { background: #4A7A6F; }
-.theme-btn-lg.japon   { background: #4E6042; }
-.theme-btn-lg.bouddha { background: #2D6B44; }
+.theme-btn-lg.japon   { background: #C8A055; }
+.theme-btn-lg.bouddha { background: #3A9A50; }
 .theme-btn-lg.bambou  { background: #1A2E16; border: 2px solid #E8C840; }
 
 @media (max-width: 767px) {
