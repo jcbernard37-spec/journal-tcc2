@@ -35,11 +35,26 @@ export default function Sauvegarde() {
 
   const importer = async (f: File | undefined) => {
     if (!f) return;
-    const ok = await stockage.importer(f);
-    setMessage(ok
-      ? '✓ Sauvegarde restaurée ! Ton profil et toutes tes entrées sont de retour.'
-      : '✗ Ce fichier ne semble pas être une sauvegarde du Journal TCC.');
-    if (ok) setTimeout(() => window.location.reload(), 1500);
+    setMessage('⏳ Chargement en cours…');
+
+    const resultat = await stockage.importer(f);
+
+    if (resultat.ok) {
+      const details = [
+        resultat.profil  && 'profil',
+        resultat.entrees && 'entrées',
+      ].filter(Boolean).join(' + ');
+      setMessage(`✓ Restauré avec succès (${details}). Rechargement…`);
+      setTimeout(() => window.location.reload(), 1500);
+    } else {
+      const msgs: Record<string, string> = {
+        format_inconnu:    '✗ Format non reconnu. Utilise le fichier solco-sauvegarde-*.json téléchargé depuis cette page.',
+        donnees_vides:     '✗ Le fichier ne contient ni profil ni entrées valides.',
+        json_invalide:     '✗ Le fichier est corrompu ou n\'est pas un JSON valide.',
+        lecture_impossible:'✗ Impossible de lire le fichier. Réessaie.',
+      };
+      setMessage(msgs[resultat.erreur || ''] || '✗ Ce fichier ne semble pas être une sauvegarde Solco.');
+    }
   };
 
   return (
@@ -48,7 +63,8 @@ export default function Sauvegarde() {
         <h1>Sauvegarde &amp; Google Drive</h1>
         <p style={{ color: 'var(--encre-2)', marginTop: '0.4rem' }}>
           Tes données vivent sur <strong>cet appareil</strong> (rien n'est envoyé sur un serveur).
-          Pour les retrouver partout — téléphone, PC du travail — connecte ton Google Drive : tout se synchronise automatiquement.
+          Pour les retrouver sur ton téléphone ou un autre PC, exporte un fichier de sauvegarde
+          et charge-le sur le nouvel appareil — ou connecte Google Drive pour une sync automatique.
         </p>
 
         {message && (
@@ -93,29 +109,32 @@ export default function Sauvegarde() {
         <div className="carte" style={{ marginTop: '1.6rem' }}>
           <h3>⬇️ 1. Exporter ma sauvegarde</h3>
           <p style={{ color: 'var(--encre-2)', margin: '0.5rem 0 1rem' }}>
-            Télécharge un fichier contenant ton profil et tes <strong>{entrees.length}</strong> entrée{entrees.length > 1 ? 's' : ''}.
-            Dépose-le ensuite dans un dossier « Journal TCC » de ton Google Drive : il sera
-            accessible depuis tous tes appareils.
+            Télécharge un fichier <code>solco-sauvegarde-*.json</code> contenant ton profil
+            et tes <strong>{entrees.length}</strong> entrée{entrees.length > 1 ? 's' : ''}.
+            Ce fichier unique contient tout — charge-le sur n'importe quel autre appareil pour tout retrouver.
           </p>
           <button className="btn btn-primaire" onClick={() => stockage.exporterTout()}>
-            Télécharger ma sauvegarde
+            ⬇️ Télécharger ma sauvegarde
           </button>
           <p style={{ color: 'var(--encre-3)', fontSize: '0.85rem', marginTop: '0.8rem' }}>
-            Astuce : fais-le une fois par semaine, ou après une grosse session d'écriture.
+            Conseil : dépose ce fichier dans ton Google Drive pour y accéder depuis ton téléphone.
           </p>
         </div>
 
         <div className="carte" style={{ marginTop: '1.4rem' }}>
           <h3>⬆️ 2. Restaurer sur un autre appareil</h3>
-          <p style={{ color: 'var(--encre-2)', margin: '0.5rem 0 1rem' }}>
-            Sur ton téléphone ou un autre ordinateur : ouvre ce site, viens sur cette page,
-            et charge le fichier de sauvegarde depuis ton Google Drive. Tout revient
-            instantanément.
+          <p style={{ color: 'var(--encre-2)', margin: '0.5rem 0 0.75rem' }}>
+            Ouvre ce site sur le nouvel appareil, reviens sur cette page, et charge
+            le fichier <code>solco-sauvegarde-*.json</code> que tu as exporté. Profil + entrées reviennent instantanément.
           </p>
+          <div style={{ background: 'var(--bleu-pale)', borderRadius: '8px', padding: '0.75rem 1rem', marginBottom: '1rem', fontSize: '0.85rem', color: 'var(--bleu)' }}>
+            ℹ️ <strong>Si tu vois des fichiers <code>profil.json</code> ou <code>entrees.json</code> dans ton Drive</strong> — ce sont d'anciens fichiers de sync.
+            Solco les reconnaît aussi. Mais utilise de préférence le fichier <code>solco-sauvegarde-*.json</code> qui contient tout.
+          </div>
           <input ref={fichierRef} type="file" accept=".json,application/json" hidden
             onChange={e => importer(e.target.files?.[0])} />
           <button className="btn btn-contour" onClick={() => fichierRef.current?.click()}>
-            Charger un fichier de sauvegarde
+            ⬆️ Charger un fichier de sauvegarde
           </button>
         </div>
 
