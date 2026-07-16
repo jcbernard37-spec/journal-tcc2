@@ -62,7 +62,7 @@ export const YOGA_NIDRA_COURT: Segment[] = [
 export const YOGA_NIDRA_MOYEN: Segment[] = [
   // ── INDUCTION ──────────────────────────────────────────────────────────
   { texte: "Installe-toi.", pause: 4000 },
-  { texte: "Où que tu sois — allongée, assise, soutenue — laisse simplement le poids de ton corps être accueilli par ce qui est sous toi.", pause: 5000 },
+  { texte: "Où que tu sois — allongé[e], assis[e], soutenue — laisse simplement le poids de ton corps être accueilli par ce qui est sous toi.", pause: 5000 },
   { texte: "Tu n'as rien à accomplir dans les prochaines minutes.", pause: 3000 },
   { texte: "Aucune performance. Aucune bonne façon de le faire.", pause: 3000 },
   { texte: "Juste... être ici.", pause: 5000 },
@@ -152,7 +152,7 @@ export const YOGA_NIDRA_MOYEN: Segment[] = [
   { texte: "Tu peux être simplement... tenue.", pause: 10000 },
   // ── INTÉGRATION — L'Ancrage ────────────────────────────────────────────
   { texte: "Dans quelques instants, je vais te proposer quelque chose à garder. Pas une pensée. Un geste.", pause: 5000 },
-  { texte: "Porte ta main — une seule — doucement sur ta poitrine.", pause: 5000 },
+  { texte: "Porte ta main — une seul[e] — doucement sur ta poitrine.", pause: 5000 },
   { texte: "Sens ton cœur sous ta paume.", pause: 5000 },
   { texte: "Il bat. Il bat depuis le début. Il bat sans que tu lui demandes.", pause: 5000 },
   { texte: "Ce geste — cette main sur ton cœur — peut devenir une clé.", pause: 4000 },
@@ -365,7 +365,7 @@ export const HYPNOSE_RESSOURCE: Segment[] = [
   { texte: "Je veux que tu remontes le fil de ta vie.", pause: 4000 },
   { texte: "Pas vers les blessures. Vers les moments de puissance.", pause: 5000 },
   { texte: "Un moment où tu te sentais vraiment toi-même.", pause: 4000 },
-  { texte: "Vraiment capable. Vraiment vivante. Vraiment entière.", pause: 5000 },
+  { texte: "Vraiment capable. Vraiment vivant[e]. Vraiment entier[e].", pause: 5000 },
   { texte: "Ce peut être quelque chose d'immense — ou quelque chose d'infime.", pause: 5000 },
   { texte: "Le moment où tu as tenu bon. Où tu t'es relevée. Où tu as ri.", pause: 5000 },
   { texte: "Laisse venir le souvenir. Ne force rien.", pause: 6000 },
@@ -510,7 +510,7 @@ export const VIZ_ENFANT: Segment[] = [
   { texte: "Tu reviens dans le présent. Dans ce corps. Dans cette pièce.", pause: 5000 },
   { texte: "Bouge doucement les mains. Respire profondément.", pause: 5000 },
   { texte: "Ouvre les yeux quand tu es prête.", pause: 4000 },
-  { texte: "Tu n'es plus seule — même à l'intérieur.", pause: 4000 },
+  { texte: "Tu n'es plus seul[e] — même à l'intérieur.", pause: 4000 },
 ];
 
 /** "Le Sommet que tu as Déjà Gravi" — Ressources Futures ~25 min */
@@ -609,7 +609,7 @@ export const VIZ_DIALOGUE: Segment[] = [
   { texte: "Tu as essayé de me protéger. Merci.", pause: 6000 },
   { texte: "Mais j'ai besoin d'autre chose maintenant.", pause: 5000 },
   { texte: "Tu lui demandes : de quoi as-tu besoin, toi ?", pause: 5000 },
-  { texte: "Pour te sentir moins seule. Moins obligée de réagir si fort.", pause: 5000 },
+  { texte: "Pour te sentir moins seul[e]. Moins obligée de réagir si fort.", pause: 5000 },
   { texte: "Écoute.", pause: 12000 },
   { texte: "Pouvez-vous trouver ensemble une nouvelle façon de travailler ?", pause: 7000 },
   { texte: "Elle comme alliée plutôt que comme ennemie.", pause: 6000 },
@@ -803,7 +803,7 @@ export const AFFIRMATIONS_GUIDEES: Segment[] = [
   { texte: "Je suis assez.", pause: 5000 },
   { texte: "Je suis assez.", pause: 7000 },
   { texte: "Choisis maintenant l'affirmation qui t'a le plus touchée.", pause: 4000 },
-  { texte: "Répète-la encore trois fois, pour toi seule.", pause: 12000 },
+  { texte: "Répète-la encore trois fois, pour toi seul[e].", pause: 12000 },
   { texte: "Porte-la avec toi aujourd'hui.", pause: 4000 },
   { texte: "Reviens doucement. Ouvre les yeux.", pause: 4000 },
 ];

@@ -1,6 +1,9 @@
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { jouerScriptGuidé, arreter, mettreEnPause, reprendre } from '../lib/voiceGuide';
+import { genererSession, iaDisponible } from '../lib/sessionIA';
+import { getProfil } from '../lib/profilPersonnel';
+import { personnaliserScript } from '../lib/genreAdapteur';
 import { YOGA_NIDRA_COURT, YOGA_NIDRA_MOYEN, YOGA_NIDRA_LONG } from '../data/scriptsTherapeutiques';
 import type { Segment } from '../data/scriptsTherapeutiques';
 import { getZenPlayer } from '../lib/zenMusic';
@@ -28,6 +31,10 @@ export default function YogaNidra() {
   const [totalSegments, setTotalSegments] = useState(0);
   const [tempsSession, setTempsSession] = useState(0);
   const [texteActuel, setTexteActuel] = useState('');
+  const [etatJour, setEtatJour]       = useState('');
+  const [chargementIA, setChargementIA] = useState(false);
+  const [sourceScript, setSourceScript] = useState<'ia'|'fallback'>('fallback');
+  const profil = getProfil();
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const options = {
@@ -46,9 +53,24 @@ export default function YogaNidra() {
   const [volumeMusique, setVolumeMusique] = useState(0.4);
   const zenPlayer = getZenPlayer();
 
-  const demarrer = () => {
+  const demarrer = async () => {
     if (!duree) return;
-    const script = SCRIPTS[duree];
+    setChargementIA(true);
+
+    const outilMap = { court: 'yoga_nidra_court', moyen: 'yoga_nidra', long: 'yoga_nidra_long' };
+    const dureeMap = { court: 15, moyen: 30, long: 60 };
+
+    const { segments, source } = await genererSession(
+      outilMap[duree],
+      dureeMap[duree],
+      SCRIPTS[duree],
+      etatJour || undefined
+    );
+
+    setSourceScript(source);
+    setChargementIA(false);
+
+    const script = segments;
     setTotalSegments(script.length);
     setProgres(0);
     setEnCours(true);
@@ -180,6 +202,19 @@ export default function YogaNidra() {
               <span style={{ fontSize: '0.8rem', color: 'var(--encre-3)' }}>10 — Pleine d'énergie</span>
             </div>
 
+            {/* État du jour */}
+            <div style={{ marginBottom: '1.25rem' }}>
+              <label style={{ display: 'block', fontWeight: 700, marginBottom: '0.4rem', fontSize: '0.9rem', color: 'var(--encre)' }}>
+                Comment tu te sens là, maintenant ? <span style={{ fontWeight: 400, color: 'var(--encre-3)' }}>(optionnel)</span>
+              </label>
+              <textarea value={etatJour} onChange={e => setEtatJour(e.target.value)}
+                placeholder="Ex : Fatiguée, beaucoup de pensées, anxieux·se avant une réunion…"
+                style={{ width: '100%', padding: '0.85rem', border: '1.5px solid var(--carte-border)', borderRadius: '10px', background: 'var(--bg)', color: 'var(--encre)', fontFamily: 'inherit', fontSize: '0.9rem', minHeight: '70px', resize: 'vertical' }} />
+              <p style={{ fontSize: '0.78rem', color: 'var(--encre-3)', marginTop: '0.35rem' }}>
+                {iaDisponible() ? "✨ L'IA va générer une session unique basée sur ton profil et ce que tu vis." : '📝 Renseigne ton profil pour des sessions personnalisées.'}
+              </p>
+            </div>
+
             <div style={{ background: 'var(--accent-pale)', padding: '1.1rem', borderRadius: '10px', marginBottom: '1rem', color: 'var(--accent-fonce)', fontSize: '0.9rem' }}>
               🎵 Musique zen générée + 🎙️ voix guidée démarrent automatiquement.
             </div>
@@ -199,9 +234,9 @@ export default function YogaNidra() {
                 style={{ flex: 1, padding: '0.9rem', borderRadius: '999px', background: 'var(--bg-2)', border: '1.5px solid var(--carte-border)', fontWeight: 600, cursor: 'pointer', color: 'var(--encre-2)' }}>
                 Retour
               </button>
-              <button onClick={demarrer}
-                style={{ flex: 2, padding: '0.9rem', borderRadius: '999px', background: 'var(--accent)', color: 'white', border: 'none', fontWeight: 700, cursor: 'pointer' }}>
-                🎙️ Commencer la guidance
+              <button onClick={demarrer} disabled={chargementIA}
+                style={{ flex: 2, padding: '0.9rem', borderRadius: '999px', background: chargementIA ? 'var(--encre-3)' : 'var(--accent)', color: 'white', border: 'none', fontWeight: 700, cursor: chargementIA ? 'default' : 'pointer' }}>
+                {chargementIA ? '✨ Solco prépare ta session…' : '🎙️ Commencer la guidance'}
               </button>
             </div>
           </div>
@@ -236,7 +271,7 @@ export default function YogaNidra() {
             </div>
 
             <p style={{ color: 'var(--encre-2)', marginBottom: '1rem', fontSize: '0.9rem' }}>
-              {enPauseEtat ? '⏸ En pause' : '🎵 Musique zen  ·  🎙️ Voix guidée'}
+              {enPauseEtat ? '⏸ En pause' : `🎵 Musique zen  ·  🎙️ ${sourceScript === 'ia' ? 'Session personnalisée par l\'IA' : 'Voix guidée'}`}
             </p>
 
             {/* Texte courant visible */}
