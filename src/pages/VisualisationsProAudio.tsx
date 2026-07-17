@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { startBinauralBeats, stopBinauralBeats, fadeOutBinauralBeats, debloquerBinauralBeats } from '../lib/binauralBeats';
+import { startBinauralBeats, stopBinauralBeats, fadeOutBinauralBeats, debloquerBinauralBeats, suspendreBinauralBeats, reprendreBinauralBeats } from '../lib/binauralBeats';
 import { loadUserProfile, generatePersonalizedVisualization } from '../lib/iaPersonnalisee';
 import { textToSpeech } from '../lib/elevenLabs';
 import { stockage } from '../lib/storage';
@@ -8,6 +8,15 @@ import { debloquerAudio } from '../lib/iosAudioUnlock';
 import SOSFlottant from '../lib/SOSFlottant';
 
 type VisuType = 'abondance' | 'guerison' | 'enfant' | 'ressources' | 'safe' | 'dialogue';
+
+const DUREES_MIN: Record<VisuType, number> = {
+  abondance: 30,
+  guerison: 40,
+  enfant: 45,
+  ressources: 25,
+  safe: 20,
+  dialogue: 50,
+};
 
 export default function VisualisationsProAudio() {
   const navigate = useNavigate();
@@ -17,6 +26,7 @@ export default function VisualisationsProAudio() {
   const [isLoading, setIsLoading] = useState(false);
   const [audioUrl, setAudioUrl] = useState<string | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
+  const [enPause, setEnPause] = useState(false);
   const [sessionTime, setSessionTime] = useState(0);
   const [audioPlayer, setAudioPlayer] = useState<HTMLAudioElement | null>(null);
   const [erreurGeneration, setErreurGeneration] = useState(false);
@@ -53,6 +63,7 @@ export default function VisualisationsProAudio() {
     setIsLoading(true);
     setErreurGeneration(false);
     setErreurMessage('');
+    setEnPause(false);
     setPhase('session');
 
     try {
@@ -76,15 +87,7 @@ export default function VisualisationsProAudio() {
 
       intervalRef.current = setInterval(() => {
         setSessionTime(prev => {
-          const durations: Record<VisuType, number> = {
-            abondance: 30,
-            guerison: 40,
-            enfant: 45,
-            ressources: 25,
-            safe: 20,
-            dialogue: 50,
-          };
-          const maxTime = (durations[type!] || 30) * 60;
+          const maxTime = (DUREES_MIN[type!] || 30) * 60;
           if (prev >= maxTime) {
             if (intervalRef.current) clearInterval(intervalRef.current);
             return prev;
@@ -109,6 +112,32 @@ export default function VisualisationsProAudio() {
     if (intervalRef.current) clearInterval(intervalRef.current);
     fadeOutBinauralBeats(3);
     setPhase('apres');
+  };
+
+  // Met en pause / reprend l'audio, les binaural beats et le minuteur.
+  const handlePauseReprendre = () => {
+    if (!audioPlayer) return;
+
+    if (enPause) {
+      audioPlayer.play().catch(err => console.error('Error resuming audio:', err));
+      reprendreBinauralBeats();
+      intervalRef.current = setInterval(() => {
+        setSessionTime(prev => {
+          const maxTime = (DUREES_MIN[type!] || 30) * 60;
+          if (prev >= maxTime) {
+            if (intervalRef.current) clearInterval(intervalRef.current);
+            return prev;
+          }
+          return prev + 1;
+        });
+      }, 1000);
+      setEnPause(false);
+    } else {
+      audioPlayer.pause();
+      suspendreBinauralBeats();
+      if (intervalRef.current) clearInterval(intervalRef.current);
+      setEnPause(true);
+    }
   };
 
   // Le bouton "Retour" doit couper le son avant de quitter la page,
@@ -277,22 +306,41 @@ export default function VisualisationsProAudio() {
               </>
             )}
 
-            <button
-              onClick={handleTerminerSession}
-              disabled={isLoading}
-              style={{
-                width: '100%',
-                padding: '1rem',
-                background: '#F0F0ED',
-                border: '1.5px solid #E0DDD8',
-                borderRadius: '8px',
-                cursor: isLoading ? 'default' : 'pointer',
-                opacity: isLoading ? 0.5 : 1,
-                fontWeight: 600,
-              }}
-            >
-              Visualization Terminee
-            </button>
+            <div style={{ display: 'flex', gap: '0.8rem' }}>
+              <button
+                onClick={handlePauseReprendre}
+                disabled={isLoading}
+                style={{
+                  flex: 1,
+                  padding: '1rem',
+                  background: enPause ? '#FFD93D' : '#F0F0ED',
+                  color: '#222',
+                  border: '1.5px solid #E0DDD8',
+                  borderRadius: '8px',
+                  cursor: isLoading ? 'default' : 'pointer',
+                  opacity: isLoading ? 0.5 : 1,
+                  fontWeight: 600,
+                }}
+              >
+                {enPause ? '▶️ Reprendre' : '⏸️ Pause'}
+              </button>
+              <button
+                onClick={handleTerminerSession}
+                disabled={isLoading}
+                style={{
+                  flex: 1,
+                  padding: '1rem',
+                  background: '#F0F0ED',
+                  border: '1.5px solid #E0DDD8',
+                  borderRadius: '8px',
+                  cursor: isLoading ? 'default' : 'pointer',
+                  opacity: isLoading ? 0.5 : 1,
+                  fontWeight: 600,
+                }}
+              >
+                Visualization Terminee
+              </button>
+            </div>
           </div>
         )}
 

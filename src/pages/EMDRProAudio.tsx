@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { startBinauralBeats, stopBinauralBeats, debloquerBinauralBeats } from '../lib/binauralBeats';
+import { startBinauralBeats, stopBinauralBeats, debloquerBinauralBeats, suspendreBinauralBeats, reprendreBinauralBeats } from '../lib/binauralBeats';
 import { loadUserProfile, generatePersonalizedEMDRIntro } from '../lib/iaPersonnalisee';
 import { textToSpeech } from '../lib/elevenLabs';
 import { stockage } from '../lib/storage';
@@ -15,6 +15,7 @@ export default function EMDRProAudio() {
   const [ressource, setRessource] = useState('');
   const [duree, setDuree] = useState(0);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [enPause, setEnPause] = useState(false);
   const [direction, setDirection] = useState<'left' | 'right'>('left');
   const [cycleCount, setCycleCount] = useState(0);
   const [isLoading, setIsLoading] = useState(false);
@@ -90,6 +91,7 @@ export default function EMDRProAudio() {
   const handleDemarrerTraitement = async () => {
     audioPlayer?.pause();
     setIsProcessing(true);
+    setEnPause(false);
     setPhase('processing');
     await startBinauralBeats('emdr');
   };
@@ -98,6 +100,22 @@ export default function EMDRProAudio() {
     setIsProcessing(false);
     stopBinauralBeats();
     setPhase('post');
+  };
+
+  // Met en pause / reprend la stimulation bilatérale et les binaural beats
+  // — utile pour une pause pipi ou une interruption pendant la séance.
+  // Réutilise `isProcessing` : le passer à false arrête déjà proprement
+  // les intervals (via le useEffect existant), le repasser à true les relance.
+  const handlePauseReprendre = () => {
+    if (enPause) {
+      setIsProcessing(true);
+      reprendreBinauralBeats();
+      setEnPause(false);
+    } else {
+      setIsProcessing(false);
+      suspendreBinauralBeats();
+      setEnPause(true);
+    }
   };
 
   // Le bouton "Retour" doit couper le son et les binaural beats avant de
@@ -356,20 +374,37 @@ export default function EMDRProAudio() {
               Pense à {ressource || 'ta ressource'} si tu le souhaites.
             </p>
 
-            <button
-              onClick={handleArretTraitement}
-              style={{
-                width: '100%',
-                padding: '1rem',
-                background: '#F0F0ED',
-                border: '1.5px solid #E0DDD8',
-                borderRadius: '8px',
-                cursor: 'pointer',
-                fontWeight: 600,
-              }}
-            >
-              Arrêter le traitement
-            </button>
+            <div style={{ display: 'flex', gap: '0.8rem' }}>
+              <button
+                onClick={handlePauseReprendre}
+                style={{
+                  flex: 1,
+                  padding: '1rem',
+                  background: enPause ? '#FF6B6B' : '#F0F0ED',
+                  color: enPause ? 'white' : '#222',
+                  border: '1.5px solid #E0DDD8',
+                  borderRadius: '8px',
+                  cursor: 'pointer',
+                  fontWeight: 600,
+                }}
+              >
+                {enPause ? '▶️ Reprendre' : '⏸️ Pause'}
+              </button>
+              <button
+                onClick={handleArretTraitement}
+                style={{
+                  flex: 1,
+                  padding: '1rem',
+                  background: '#F0F0ED',
+                  border: '1.5px solid #E0DDD8',
+                  borderRadius: '8px',
+                  cursor: 'pointer',
+                  fontWeight: 600,
+                }}
+              >
+                Arrêter le traitement
+              </button>
+            </div>
           </div>
         )}
 

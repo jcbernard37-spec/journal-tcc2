@@ -78,7 +78,7 @@ async function genererSegmentAudio(texte, apiKey) {
           similarity_boost: 0.85,
           style: 0.5,
           use_speaker_boost: true,
-          speed: 0.85, // Ralentit le débit (1.0 = normal, 0.7-1.2 possible)
+          speed: 0.75, // Ralentit le débit (1.0 = normal, 0.7-1.2 possible)
         },
       }),
     }

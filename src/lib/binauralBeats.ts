@@ -182,6 +182,23 @@ export class BinauralBeatsGenerator {
   }
 
   /**
+   * Met en pause les binaural beats (sans les arrêter définitivement) —
+   * suspend le AudioContext, ce qui gèle aussi les oscillateurs en cours.
+   */
+  suspendre(): void {
+    if (this.audioContext && this.audioContext.state === 'running') {
+      this.audioContext.suspend().catch(() => {});
+    }
+  }
+
+  /** Reprend les binaural beats après une pause. */
+  reprendre(): void {
+    if (this.audioContext && this.audioContext.state === 'suspended') {
+      this.audioContext.resume().catch(() => {});
+    }
+  }
+
+  /**
    * Arrête les binaural beats
    */
   stop(): void {
@@ -286,6 +303,16 @@ export function stopBinauralBeats(): void {
  */
 export function debloquerBinauralBeats(): void {
   getBinauralGenerator().debloquer();
+}
+
+/** Met en pause les binaural beats sans les arrêter (peut reprendre après). */
+export function suspendreBinauralBeats(): void {
+  getBinauralGenerator().suspendre();
+}
+
+/** Reprend les binaural beats après une pause. */
+export function reprendreBinauralBeats(): void {
+  getBinauralGenerator().reprendre();
 }
 
 export function fadeOutBinauralBeats(duration = 3): void {
