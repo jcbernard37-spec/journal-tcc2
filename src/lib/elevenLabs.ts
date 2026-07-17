@@ -2,11 +2,12 @@
  * Eleven Labs Integration
  * Transforme les scripts en voix naturelle professionnelle
  * Voix: Rachel (féminin doux, bienveillant, thérapeute-style)
+ *
+ * ⚠️ SÉCURITÉ : la clé Eleven Labs ne doit JAMAIS être exposée côté client.
+ * Elle vit uniquement côté serveur (Vercel env var ELEVEN_LABS_API_KEY,
+ * SANS préfixe VITE_) et est utilisée par /api/tts.js. Ce fichier ne fait
+ * qu'appeler cette route interne — jamais api.elevenlabs.io directement.
  */
-
-// Note: VITE_ELEVEN_LABS_KEY doit être défini dans .env ou Vercel env
-const ELEVEN_LABS_API_KEY = import.meta.env.VITE_ELEVEN_LABS_KEY || '';
-const VOICE_ID = 'EXAVITQu4vr4xnSDxMaL'; // Rachel - Natural, warm, calm
 
 interface AudioCacheEntry {
   text: string;
@@ -37,35 +38,19 @@ export async function textToSpeech(
     }
   }
 
-  if (!ELEVEN_LABS_API_KEY) {
-    console.warn('[Solco] VITE_ELEVEN_LABS_KEY absente — voix Pro indisponible.');
-    return null;
-  }
-
   try {
-    const response = await fetch(
-      `https://api.elevenlabs.io/v1/text-to-speech/${VOICE_ID}`,
-      {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'xi-api-key': ELEVEN_LABS_API_KEY || '',
-        },
-        body: JSON.stringify({
-          text,
-          model_id: 'eleven_monolingual_v1',
-          voice_settings: {
-            stability: 0.5, // Un peu de variation pour plus naturel
-            similarity_boost: 0.85, // Très similaire à la voix
-            style: 0.5, // Style neutre/thérapeute
-            use_speaker_boost: true, // Meilleure qualité
-          },
-        }),
-      }
-    );
+    // Appelle notre proxy serveur — la clé Eleven Labs reste secrète côté Vercel
+    const response = await fetch('/api/tts', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ text }),
+    });
 
     if (!response.ok) {
-      console.error('Eleven Labs error:', response.statusText);
+      const err = await response.json().catch(() => ({}));
+      console.error('Eleven Labs proxy error:', response.status, err?.error);
       return null;
     }
 

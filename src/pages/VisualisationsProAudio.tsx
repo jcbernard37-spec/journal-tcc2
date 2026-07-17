@@ -1,8 +1,9 @@
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { startBinauralBeats, stopBinauralBeats, fadeOutBinauralBeats } from '../lib/binauralBeats';
 import { loadUserProfile, generatePersonalizedVisualization } from '../lib/iaPersonnalisee';
 import { textToSpeech } from '../lib/elevenLabs';
+import SOSFlottant from '../lib/SOSFlottant';
 
 type VisuType = 'abondance' | 'guerison' | 'enfant' | 'ressources' | 'safe' | 'dialogue';
 
@@ -16,6 +17,18 @@ export default function VisualisationsProAudio() {
   const [isPlaying, setIsPlaying] = useState(false);
   const [sessionTime, setSessionTime] = useState(0);
   const [audioPlayer, setAudioPlayer] = useState<HTMLAudioElement | null>(null);
+  const [erreurGeneration, setErreurGeneration] = useState(false);
+  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  // Coupe systématiquement le son et les binaural beats si l'utilisateur
+  // quitte la page (navigation, fermeture d'onglet) pendant une session.
+  useEffect(() => {
+    return () => {
+      audioPlayer?.pause();
+      stopBinauralBeats();
+      if (intervalRef.current) clearInterval(intervalRef.current);
+    };
+  }, [audioPlayer]);
 
   const visualisations: Record<VisuType, { titre: string; desc: string; duree: string; icon: string }> = {
     abondance: { titre: 'Abondance Manifestation', desc: 'Attire ce que tu veux', duree: '30 min', icon: '🌟' },
@@ -28,8 +41,9 @@ export default function VisualisationsProAudio() {
 
   const handleDemarrerSession = async () => {
     if (!type) return;
-    
+
     setIsLoading(true);
+    setErreurGeneration(false);
     setPhase('session');
 
     try {
@@ -38,35 +52,40 @@ export default function VisualisationsProAudio() {
       const url = await textToSpeech(script);
       setAudioUrl(url);
 
-      if (url) {
-        const audio = new Audio(url);
-        setAudioPlayer(audio);
-        await startBinauralBeats('meditation', { type: 'gratitude' });
-        audio.play().catch(err => console.error('Error playing:', err));
-        setIsPlaying(true);
-
-        const interval = setInterval(() => {
-          setSessionTime(prev => {
-            const durations: Record<VisuType, number> = {
-              abondance: 30,
-              guerison: 40,
-              enfant: 45,
-              ressources: 25,
-              safe: 20,
-              dialogue: 50,
-            };
-            const maxTime = (durations[type!] || 30) * 60;
-            if (prev >= maxTime) {
-              clearInterval(interval);
-              return prev;
-            }
-            return prev + 1;
-          });
-        }, 1000);
+      if (!url) {
+        // Échec silencieux évité : on prévient clairement plutôt que de
+        // laisser l'utilisateur bloqué sur un écran figé sans son.
+        setErreurGeneration(true);
+        return;
       }
+
+      const audio = new Audio(url);
+      setAudioPlayer(audio);
+      await startBinauralBeats('meditation', { type: 'gratitude' });
+      audio.play().catch(err => console.error('Error playing:', err));
+      setIsPlaying(true);
+
+      intervalRef.current = setInterval(() => {
+        setSessionTime(prev => {
+          const durations: Record<VisuType, number> = {
+            abondance: 30,
+            guerison: 40,
+            enfant: 45,
+            ressources: 25,
+            safe: 20,
+            dialogue: 50,
+          };
+          const maxTime = (durations[type!] || 30) * 60;
+          if (prev >= maxTime) {
+            if (intervalRef.current) clearInterval(intervalRef.current);
+            return prev;
+          }
+          return prev + 1;
+        });
+      }, 1000);
     } catch (error) {
       console.error('Error:', error);
-      alert('Erreur lors de la generation');
+      setErreurGeneration(true);
     } finally {
       setIsLoading(false);
     }
@@ -77,8 +96,18 @@ export default function VisualisationsProAudio() {
       audioPlayer.pause();
       setIsPlaying(false);
     }
+    if (intervalRef.current) clearInterval(intervalRef.current);
     fadeOutBinauralBeats(3);
     setPhase('apres');
+  };
+
+  // Le bouton "Retour" doit couper le son avant de quitter la page,
+  // sinon audio + binaural beats continuent de jouer en arrière-plan.
+  const handleRetour = () => {
+    audioPlayer?.pause();
+    if (intervalRef.current) clearInterval(intervalRef.current);
+    stopBinauralBeats();
+    navigate('/outils-therapeutiques');
   };
 
   const handleSauvegarder = () => {
@@ -104,7 +133,7 @@ export default function VisualisationsProAudio() {
   return (
     <div className="page" style={{ background: '#FAFAF8' }}>
       <div className="conteneur-etroit" style={{ paddingTop: '1.5rem' }}>
-        <button onClick={() => navigate('/outils-therapeutiques')} style={{ background: 'none', border: 'none', color: '#888', cursor: 'pointer', marginBottom: '1.2rem' }}>
+        <button onClick={handleRetour} style={{ background: 'none', border: 'none', color: '#888', cursor: 'pointer', marginBottom: '1.2rem' }}>
           Retour
         </button>
 
@@ -175,10 +204,36 @@ export default function VisualisationsProAudio() {
           </div>
         )}
 
-        {phase === 'session' && (
+        {phase === 'session' && erreurGeneration && (
           <div style={{ background: 'white', borderRadius: '12px', padding: '1.8rem', border: '1px solid #E8E6E1', textAlign: 'center' }}>
             <h2 style={{ fontSize: '1.4rem', marginBottom: '1rem', color: '#222' }}>
-              {visualisations[type!].titre}
+              Un souci technique
+            </h2>
+            <p style={{ color: '#666', marginBottom: '1.4rem' }}>
+              La génération de ta visualisation personnalisée n'a pas fonctionné cette fois-ci.
+              Rien n'est perdu — tu peux réessayer, ou revenir plus tard.
+            </p>
+            <div style={{ display: 'flex', gap: '0.8rem' }}>
+              <button
+                onClick={() => setPhase('choix')}
+                style={{ flex: 1, padding: '1rem', background: '#F0F0ED', border: '1.5px solid #E0DDD8', borderRadius: '8px', cursor: 'pointer', fontWeight: 600 }}
+              >
+                Retour
+              </button>
+              <button
+                onClick={handleDemarrerSession}
+                style={{ flex: 1, padding: '1rem', background: '#FFD93D', color: '#222', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: 600 }}
+              >
+                Réessayer
+              </button>
+            </div>
+          </div>
+        )}
+
+        {phase === 'session' && !erreurGeneration && (
+          <div style={{ background: 'white', borderRadius: '12px', padding: '1.8rem', border: '1px solid #E8E6E1', textAlign: 'center' }}>
+            <h2 style={{ fontSize: '1.4rem', marginBottom: '1rem', color: '#222' }}>
+              {isLoading ? 'Préparation de ta visualisation...' : visualisations[type!].titre}
             </h2>
             
             <div
@@ -192,35 +247,45 @@ export default function VisualisationsProAudio() {
               }}
             />
 
-            <div style={{
-              fontSize: '2rem',
-              fontWeight: 700,
-              color: '#FFD93D',
-              marginBottom: '1rem',
-            }}>
-              {Math.floor(sessionTime / 60)}:{String(sessionTime % 60).padStart(2, '0')}
-            </div>
+            {isLoading ? (
+              <p style={{ color: '#666', marginBottom: '1.4rem' }}>
+                Ta voix personnalisée et les Alpha beats se préparent, quelques instants...
+              </p>
+            ) : (
+              <>
+                <div style={{
+                  fontSize: '2rem',
+                  fontWeight: 700,
+                  color: '#FFD93D',
+                  marginBottom: '1rem',
+                }}>
+                  {Math.floor(sessionTime / 60)}:{String(sessionTime % 60).padStart(2, '0')}
+                </div>
 
-            {isPlaying && (
-              <div style={{ color: '#FFD93D', marginBottom: '1.4rem', fontSize: '0.95rem' }}>
-                🎙️ Guidage narratif personnalisé<br />
-                🧠 Alpha beats pour creativilite
-              </div>
+                {isPlaying && (
+                  <div style={{ color: '#FFD93D', marginBottom: '1.4rem', fontSize: '0.95rem' }}>
+                    🎙️ Guidage narratif personnalisé<br />
+                    🧠 Alpha beats pour creativilite
+                  </div>
+                )}
+
+                <p style={{ color: '#666', marginBottom: '1.4rem' }}>
+                  Ferme tes yeux. Visualise en detail. Utilise tous tes sens.
+                </p>
+              </>
             )}
-
-            <p style={{ color: '#666', marginBottom: '1.4rem' }}>
-              Ferme tes yeux. Visualise en detail. Utilise tous tes sens.
-            </p>
 
             <button
               onClick={handleTerminerSession}
+              disabled={isLoading}
               style={{
                 width: '100%',
                 padding: '1rem',
                 background: '#F0F0ED',
                 border: '1.5px solid #E0DDD8',
                 borderRadius: '8px',
-                cursor: 'pointer',
+                cursor: isLoading ? 'default' : 'pointer',
+                opacity: isLoading ? 0.5 : 1,
                 fontWeight: 600,
               }}
             >
@@ -262,6 +327,8 @@ export default function VisualisationsProAudio() {
           </div>
         )}
       </div>
+
+      <SOSFlottant />
 
       <style>{`
         @keyframes glow {

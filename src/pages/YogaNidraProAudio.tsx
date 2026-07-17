@@ -1,8 +1,9 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { startBinauralBeats, stopBinauralBeats, fadeOutBinauralBeats } from '../lib/binauralBeats';
 import { loadUserProfile, generatePersonalizedYogaNidra } from '../lib/iaPersonnalisee';
 import { textToSpeech } from '../lib/elevenLabs';
+import SOSFlottant from '../lib/SOSFlottant';
 
 type Duree = 'court' | 'moyen' | 'long';
 
@@ -17,6 +18,18 @@ export default function YogaNidraProAudio() {
   const [isPlaying, setIsPlaying] = useState(false);
   const [sessionTime, setSessionTime] = useState(0);
   const [audioPlayer, setAudioPlayer] = useState<HTMLAudioElement | null>(null);
+  const [erreurGeneration, setErreurGeneration] = useState(false);
+  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  // Coupe systématiquement le son et les binaural beats si l'utilisateur
+  // quitte la page (navigation, fermeture d'onglet) pendant une session.
+  useEffect(() => {
+    return () => {
+      audioPlayer?.pause();
+      stopBinauralBeats();
+      if (intervalRef.current) clearInterval(intervalRef.current);
+    };
+  }, [audioPlayer]);
 
   const durees = {
     court: { min: 15, titre: 'Court 15 min', desc: 'Rapide et efficace' },
@@ -27,8 +40,9 @@ export default function YogaNidraProAudio() {
   // Lance la génération du contenu quand on commence la session
   const handleDemarrerSession = async () => {
     if (!duree) return;
-    
+
     setIsLoading(true);
+    setErreurGeneration(false);
     setPhase('session');
 
     try {
@@ -42,32 +56,37 @@ export default function YogaNidraProAudio() {
       const url = await textToSpeech(script);
       setAudioUrl(url);
 
-      if (url) {
-        // Crée l'élément audio
-        const audio = new Audio(url);
-        setAudioPlayer(audio);
-
-        // Lance les binaural beats
-        await startBinauralBeats('yoga', { duration: duree });
-
-        // Lance l'audio
-        audio.play().catch(err => console.error('Error playing audio:', err));
-        setIsPlaying(true);
-
-        // Track le temps
-        const interval = setInterval(() => {
-          setSessionTime(prev => {
-            if (prev >= durees[duree!].min * 60) {
-              clearInterval(interval);
-              return prev;
-            }
-            return prev + 1;
-          });
-        }, 1000);
+      if (!url) {
+        // Échec silencieux évité : on prévient clairement plutôt que de
+        // laisser l'utilisateur bloqué sur un écran figé sans son.
+        setErreurGeneration(true);
+        return;
       }
+
+      // Crée l'élément audio
+      const audio = new Audio(url);
+      setAudioPlayer(audio);
+
+      // Lance les binaural beats
+      await startBinauralBeats('yoga', { duration: duree });
+
+      // Lance l'audio
+      audio.play().catch(err => console.error('Error playing audio:', err));
+      setIsPlaying(true);
+
+      // Track le temps
+      intervalRef.current = setInterval(() => {
+        setSessionTime(prev => {
+          if (prev >= durees[duree!].min * 60) {
+            if (intervalRef.current) clearInterval(intervalRef.current);
+            return prev;
+          }
+          return prev + 1;
+        });
+      }, 1000);
     } catch (error) {
       console.error('Error generating session:', error);
-      alert('Erreur lors de la génération de la session');
+      setErreurGeneration(true);
     } finally {
       setIsLoading(false);
     }
@@ -78,8 +97,18 @@ export default function YogaNidraProAudio() {
       audioPlayer.pause();
       setIsPlaying(false);
     }
+    if (intervalRef.current) clearInterval(intervalRef.current);
     fadeOutBinauralBeats(3);
     setPhase('apres');
+  };
+
+  // Le bouton "Retour" doit couper le son avant de quitter la page,
+  // sinon audio + binaural beats continuent de jouer en arrière-plan.
+  const handleRetour = () => {
+    audioPlayer?.pause();
+    if (intervalRef.current) clearInterval(intervalRef.current);
+    stopBinauralBeats();
+    navigate('/outils-therapeutiques');
   };
 
   const handleSauvegarder = () => {
@@ -106,7 +135,7 @@ export default function YogaNidraProAudio() {
   return (
     <div className="page" style={{ background: '#FAFAF8' }}>
       <div className="conteneur-etroit" style={{ paddingTop: '1.5rem' }}>
-        <button onClick={() => navigate('/outils-therapeutiques')} style={{ background: 'none', border: 'none', color: '#888', cursor: 'pointer', marginBottom: '1.2rem' }}>
+        <button onClick={handleRetour} style={{ background: 'none', border: 'none', color: '#888', cursor: 'pointer', marginBottom: '1.2rem' }}>
           Retour
         </button>
 
@@ -217,10 +246,36 @@ export default function YogaNidraProAudio() {
           </div>
         )}
 
-        {phase === 'session' && (
+        {phase === 'session' && erreurGeneration && (
           <div style={{ background: 'white', borderRadius: '12px', padding: '1.8rem', border: '1px solid #E8E6E1', textAlign: 'center' }}>
             <h2 style={{ fontSize: '1.4rem', marginBottom: '1rem', color: '#222' }}>
-              Session en cours...
+              Un souci technique
+            </h2>
+            <p style={{ color: '#666', marginBottom: '1.4rem' }}>
+              La génération de ta session personnalisée n'a pas fonctionné cette fois-ci.
+              Rien n'est perdu — tu peux réessayer, ou revenir plus tard.
+            </p>
+            <div style={{ display: 'flex', gap: '0.8rem' }}>
+              <button
+                onClick={() => setPhase('avant')}
+                style={{ flex: 1, padding: '1rem', background: '#F0F0ED', border: '1.5px solid #E0DDD8', borderRadius: '8px', cursor: 'pointer', fontWeight: 600 }}
+              >
+                Retour
+              </button>
+              <button
+                onClick={handleDemarrerSession}
+                style={{ flex: 1, padding: '1rem', background: '#4ECDC4', color: 'white', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: 600 }}
+              >
+                Réessayer
+              </button>
+            </div>
+          </div>
+        )}
+
+        {phase === 'session' && !erreurGeneration && (
+          <div style={{ background: 'white', borderRadius: '12px', padding: '1.8rem', border: '1px solid #E8E6E1', textAlign: 'center' }}>
+            <h2 style={{ fontSize: '1.4rem', marginBottom: '1rem', color: '#222' }}>
+              {isLoading ? 'Préparation de ta session...' : 'Session en cours...'}
             </h2>
             
             <div
@@ -234,35 +289,45 @@ export default function YogaNidraProAudio() {
               }}
             />
 
-            <div style={{
-              fontSize: '2rem',
-              fontWeight: 700,
-              color: '#4ECDC4',
-              marginBottom: '1rem',
-            }}>
-              {Math.floor(sessionTime / 60)}:{String(sessionTime % 60).padStart(2, '0')}
-            </div>
+            {isLoading ? (
+              <p style={{ color: '#666', marginBottom: '1.4rem' }}>
+                Ta voix personnalisée et les binaural beats se préparent, quelques instants...
+              </p>
+            ) : (
+              <>
+                <div style={{
+                  fontSize: '2rem',
+                  fontWeight: 700,
+                  color: '#4ECDC4',
+                  marginBottom: '1rem',
+                }}>
+                  {Math.floor(sessionTime / 60)}:{String(sessionTime % 60).padStart(2, '0')}
+                </div>
 
-            {isPlaying && (
-              <div style={{ color: '#4ECDC4', marginBottom: '1.4rem', fontSize: '0.95rem' }}>
-                🎙️ Voix personnalisée en cours<br />
-                🧠 Binaural beats scientifiques activés
-              </div>
+                {isPlaying && (
+                  <div style={{ color: '#4ECDC4', marginBottom: '1.4rem', fontSize: '0.95rem' }}>
+                    🎙️ Voix personnalisée en cours<br />
+                    🧠 Binaural beats scientifiques activés
+                  </div>
+                )}
+
+                <p style={{ color: '#666', marginBottom: '1.4rem' }}>
+                  Relaxe-toi complètement. Laisse-toi porter par la guidance.
+                </p>
+              </>
             )}
-
-            <p style={{ color: '#666', marginBottom: '1.4rem' }}>
-              Relaxe-toi complètement. Laisse-toi porter par la guidance.
-            </p>
 
             <button
               onClick={handleTerminerSession}
+              disabled={isLoading}
               style={{
                 width: '100%',
                 padding: '1rem',
                 background: '#F0F0ED',
                 border: '1.5px solid #E0DDD8',
                 borderRadius: '8px',
-                cursor: 'pointer',
+                cursor: isLoading ? 'default' : 'pointer',
+                opacity: isLoading ? 0.5 : 1,
                 fontWeight: 600,
               }}
             >
@@ -317,6 +382,8 @@ export default function YogaNidraProAudio() {
           </div>
         )}
       </div>
+
+      <SOSFlottant />
 
       <style>{`
         @keyframes pulse {

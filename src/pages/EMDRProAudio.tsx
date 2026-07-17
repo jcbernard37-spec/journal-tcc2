@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { startBinauralBeats, stopBinauralBeats } from '../lib/binauralBeats';
 import { loadUserProfile } from '../lib/iaPersonnalisee';
 import { textToSpeech } from '../lib/elevenLabs';
+import SOSFlottant from '../lib/SOSFlottant';
 
 export default function EMDRProAudio() {
   const navigate = useNavigate();
@@ -33,6 +34,14 @@ export default function EMDRProAudio() {
     }
   }, [phase, isProcessing]);
 
+  // Coupe systématiquement les binaural beats si l'utilisateur quitte la
+  // page (navigation, fermeture d'onglet) pendant un traitement en cours.
+  useEffect(() => {
+    return () => {
+      stopBinauralBeats();
+    };
+  }, []);
+
   const handleDemarrerTraitement = async () => {
     setIsProcessing(true);
     setPhase('processing');
@@ -43,6 +52,14 @@ export default function EMDRProAudio() {
     setIsProcessing(false);
     stopBinauralBeats();
     setPhase('post');
+  };
+
+  // Le bouton "Retour" doit couper les binaural beats avant de quitter la
+  // page, sinon ils continuent de jouer en arrière-plan.
+  const handleRetour = () => {
+    setIsProcessing(false);
+    stopBinauralBeats();
+    navigate('/outils-therapeutiques');
   };
 
   const handleSauvegarder = () => {
@@ -70,7 +87,7 @@ export default function EMDRProAudio() {
   return (
     <div className="page" style={{ background: '#FAFAF8' }}>
       <div className="conteneur-etroit" style={{ paddingTop: '1.5rem' }}>
-        <button onClick={() => navigate('/outils-therapeutiques')} style={{ background: 'none', border: 'none', color: '#888', cursor: 'pointer', marginBottom: '1.2rem' }}>
+        <button onClick={handleRetour} style={{ background: 'none', border: 'none', color: '#888', cursor: 'pointer', marginBottom: '1.2rem' }}>
           Retour
         </button>
 
@@ -295,6 +312,8 @@ export default function EMDRProAudio() {
           </div>
         )}
       </div>
+
+      <SOSFlottant />
     </div>
   );
 }
