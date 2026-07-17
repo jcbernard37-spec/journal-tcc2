@@ -1,6 +1,8 @@
 import { useState, useRef, useEffect } from 'react';
 import { stockage } from '../lib/storage';
 import { BoutonMicroAvance } from '../lib/BoutonMicroAvance';
+import ProfilPerso from '../components/ProfilPerso';
+import { getProfil, profilEstComplet } from '../lib/profilPersonnel';
 
 interface Anamnese {
   contexteActuel: string;
@@ -213,6 +215,11 @@ export default function Anamnese() {
           <p style={{ color: 'var(--encre-2)', marginTop: '0.4rem', marginBottom: '1.4rem', fontSize: '0.95rem' }}>
             Ce que je sais de toi.
           </p>
+
+          {/* Profil personnel — genre, âge, prénom */}
+          <div style={{ marginBottom: '1.5rem' }}>
+            <ProfilPerso />
+          </div>
 
           {pourcentageComplete === 0 ? (
             <div className="carte" style={{ textAlign: 'center', padding: '2rem 1.2rem' }}>

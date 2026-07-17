@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { jouerScriptGuidé, arreter, mettreEnPause, reprendre } from '../lib/voiceGuide';
+import { genererSession, iaDisponible } from '../lib/sessionIA';
 import { HYPNOSE_RELAXATION, HYPNOSE_CROYANCE, HYPNOSE_RESSOURCE } from '../data/scriptsTherapeutiques';
 import { getZenPlayer } from '../lib/zenMusic';
 import SOSFlottant from '../lib/SOSFlottant';
@@ -26,6 +27,7 @@ export default function Hypnose() {
   const [ressenti, setRessenti] = useState(5);
   const [enPauseEtat, setEnPauseEtat] = useState(false);
   const [texteActuel, setTexteActuel] = useState('');
+  const [chargementIA, setChargementIA] = useState(false);
   const [progres, setProgres] = useState(0);
   const [total, setTotal] = useState(0);
   const [tempsSession, setTempsSession] = useState(0);
@@ -34,9 +36,14 @@ export default function Hypnose() {
 
   useEffect(() => () => { arreter(); zenPlayer.stop(); if (intervalRef.current) clearInterval(intervalRef.current); }, []);
 
-  const demarrer = () => {
+  const demarrer = async () => {
     if (!niveau) return;
-    const script = SCRIPTS[niveau];
+    setChargementIA(true);
+    const outilMap = { relaxation: 'hypnose_relaxation', croyance: 'hypnose_croyance', ressource: 'hypnose_ressource' };
+    const dureeMap = { relaxation: 20, croyance: 25, ressource: 20 };
+    const { segments } = await genererSession(outilMap[niveau], dureeMap[niveau], SCRIPTS[niveau]);
+    setChargementIA(false);
+    const script = segments;
     setTotal(script.length);
     setPhase('session');
     intervalRef.current = setInterval(() => setTempsSession(t => t + 1), 1000);
@@ -104,7 +111,7 @@ export default function Hypnose() {
             </div>
             <button onClick={() => niveau && demarrer()} disabled={!niveau}
               style={{ width: '100%', padding: '1rem', borderRadius: '999px', background: niveau ? '#9D84B7' : 'var(--carte-border)', color: niveau ? 'white' : 'var(--encre-3)', border: 'none', fontWeight: 700, cursor: niveau ? 'pointer' : 'default' }}>
-              🎙️ Commencer l'induction
+              {chargementIA ? '✨ Solco prépare ta session…' : '🎙️ Commencer l\'induction'}
             </button>
           </div>
         )}

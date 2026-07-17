@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { jouerScriptGuidé, arreter, mettreEnPause, reprendre } from '../lib/voiceGuide';
+import { genererSession } from '../lib/sessionIA';
 import { TAPPING_EFT, COHERENCE_CARDIAQUE, MEDITATION_BIENVEILLANCE, AFFIRMATIONS_GUIDEES } from '../data/scriptsTherapeutiques';
 import { getZenPlayer } from '../lib/zenMusic';
 import SOSFlottant from '../lib/SOSFlottant';
@@ -33,7 +34,7 @@ export default function OutilsBonus() {
 
   useEffect(() => () => { arreter(); zenPlayer.stop(); if (intervalRef.current) clearInterval(intervalRef.current); }, []);
 
-  const demarrer = (o: Outil) => {
+  const demarrer = async (o: Outil) => {
     setOutil(o);
     const cfg = OUTILS_CONFIG[o];
     setTotal(cfg.script.length);
@@ -44,7 +45,9 @@ export default function OutilsBonus() {
     if (AVEC_MUSIQUE.includes(o)) {
       zenPlayer.play(0.35);
     }
-    jouerScriptGuidé(cfg.script, (i, _t, txt) => { setProgres(i); if (txt) setTexteActuel(txt); }, () => {
+    const dureeMap: Record<string, number> = { tapping: 10, coherence: 5, meditation: 20, affirmations: 10 };
+    const { segments } = await genererSession(o, dureeMap[o] || 10, cfg.script);
+    jouerScriptGuidé(segments, (i, _t, txt) => { setProgres(i); if (txt) setTexteActuel(txt); }, () => {
       if (intervalRef.current) clearInterval(intervalRef.current);
       zenPlayer.stop();
       setPhase('apres');

@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { jouerScriptGuidé, arreter, mettreEnPause, reprendre } from '../lib/voiceGuide';
+import { genererSession } from '../lib/sessionIA';
 import { VIZ_ABONDANCE, VIZ_GUERISON, VIZ_ENFANT, VIZ_RESSOURCES, VIZ_SAFE, VIZ_DIALOGUE } from '../data/scriptsTherapeutiques';
 import { getZenPlayer } from '../lib/zenMusic';
 import SOSFlottant from '../lib/SOSFlottant';
@@ -35,6 +36,7 @@ export default function Visualisations() {
   const [tempsMin,    setTempsMin]    = useState(0);
   const [ressenti,    setRessenti]    = useState(7);
   const [volMusique,  setVolMusique]  = useState(0.35);
+  const [chargementIA, setChargementIA] = useState(false);
   const [texteActuel, setTexteActuel] = useState('');
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const zenPlayer   = getZenPlayer();
@@ -46,12 +48,16 @@ export default function Visualisations() {
   }, []);
 
   // ── Démarre la session — DOIT être appelé directement depuis onClick ──
-  const demarrer = (t: VisuType) => {
+  const demarrer = async (t: VisuType) => {
     setType(t);
     setPhase('session');
     setProgres(0);
+    setChargementIA(true);
 
-    const script = SCRIPTS[t];
+    const dureeMap: Record<VisuType, number> = { abondance: 30, guerison: 40, enfant: 45, ressources: 25, safe: 20, dialogue: 50 };
+    const { segments } = await genererSession(`viz_${t}`, dureeMap[t], SCRIPTS[t]);
+    setChargementIA(false);
+    const script = segments;
     setTotal(script.length);
 
     // 1. Musique zen (AudioContext depuis geste utilisateur ✓)

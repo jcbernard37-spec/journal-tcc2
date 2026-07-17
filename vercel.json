@@ -1,3 +1,18 @@
 {
-  "rewrites": [{ "source": "/(.*)", "destination": "/index.html" }]
+  "rewrites": [
+    {
+      "source": "/(.*)",
+      "destination": "/index.html"
+    }
+  ],
+  "crons": [
+    {
+      "path": "/api/push-matin",
+      "schedule": "0 6 * * *"
+    },
+    {
+      "path": "/api/push-soir",
+      "schedule": "0 18 * * *"
+    }
+  ]
 }
