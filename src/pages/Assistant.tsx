@@ -43,9 +43,11 @@ export default function Assistant() {
   const [chargement, setChargement] = useState(false);
   const [voixActivee, setVoixActivee] = useState(true);
   const [audioEnCours, setAudioEnCours] = useState(false);
+  const [lectureBloquee, setLectureBloquee] = useState(false);
   const [sauvegarde, setSauvegarde] = useState(false);
   const finRef = useRef<HTMLDivElement>(null);
   const audioPlayerRef = useRef<HTMLAudioElement | null>(null);
+  const dernierTexteRef = useRef<string>('');
   const demarrageAuto = useRef(false);
 
   useEffect(() => {
@@ -62,6 +64,8 @@ export default function Assistant() {
   const lireAVoixHaute = async (texte: string) => {
     if (!voixActivee) return;
     audioPlayerRef.current?.pause();
+    setLectureBloquee(false);
+    dernierTexteRef.current = texte;
     setAudioEnCours(true);
     const url = await textToSpeech(texte);
     if (!url) {
@@ -72,7 +76,22 @@ export default function Assistant() {
     audioPlayerRef.current = audio;
     audio.onended = () => setAudioEnCours(false);
     audio.onerror = () => setAudioEnCours(false);
-    audio.play().catch(() => setAudioEnCours(false));
+    audio.play().catch(() => {
+      // Bloqué par le navigateur (fréquent sur iPhone/Safari quand la
+      // lecture n'est pas déclenchée par un geste tout récent — ex. le
+      // premier message auto-envoyé depuis "Mon histoire"). On propose
+      // alors un bouton "Écouter" pour relancer via un vrai clic.
+      setAudioEnCours(false);
+      setLectureBloquee(true);
+    });
+  };
+
+  // Relance manuelle de la dernière réponse — un vrai clic ici passe
+  // toujours, même sur iOS, puisque c'est un geste utilisateur direct.
+  const reessayerLecture = () => {
+    if (dernierTexteRef.current) {
+      lireAVoixHaute(dernierTexteRef.current);
+    }
   };
 
   const envoyer = async (texte: string) => {
@@ -182,6 +201,16 @@ export default function Assistant() {
             <div style={{ alignSelf: 'flex-start', color: 'var(--sauge-fonce)', fontStyle: 'italic', padding: '0.5rem 1rem' }}>
               🔊 Lecture audio en cours…
             </div>
+          )}
+          {!chargement && !audioEnCours && lectureBloquee && (
+            <button
+              type="button"
+              className="btn btn-doux"
+              onClick={reessayerLecture}
+              style={{ alignSelf: 'flex-start', marginLeft: '1rem' }}
+            >
+              ▶️ Écouter la réponse
+            </button>
           )}
           <div ref={finRef} />
         </div>

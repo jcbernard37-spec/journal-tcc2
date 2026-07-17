@@ -104,6 +104,17 @@ export class BinauralBeatsGenerator {
   }
 
   /**
+   * Débloque l'AudioContext depuis un geste utilisateur.
+   * À appeler de façon SYNCHRONE, avant tout `await`, sinon iOS Safari
+   * refusera de reprendre un contexte audio suspendu.
+   */
+  debloquer(): void {
+    if (this.audioContext && this.audioContext.state === 'suspended') {
+      this.audioContext.resume().catch(() => {});
+    }
+  }
+
+  /**
    * Lance les binaural beats
    */
   play(config: BinauralConfig): void {
@@ -267,6 +278,14 @@ export async function startBinauralBeats(
 export function stopBinauralBeats(): void {
   const gen = getBinauralGenerator();
   gen.stop();
+}
+
+/**
+ * Débloque l'AudioContext des binaural beats depuis un geste utilisateur.
+ * À appeler de façon SYNCHRONE, en tout premier, avant tout `await`.
+ */
+export function debloquerBinauralBeats(): void {
+  getBinauralGenerator().debloquer();
 }
 
 export function fadeOutBinauralBeats(duration = 3): void {

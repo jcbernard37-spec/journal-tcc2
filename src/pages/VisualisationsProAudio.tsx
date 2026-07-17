@@ -1,9 +1,10 @@
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { startBinauralBeats, stopBinauralBeats, fadeOutBinauralBeats } from '../lib/binauralBeats';
+import { startBinauralBeats, stopBinauralBeats, fadeOutBinauralBeats, debloquerBinauralBeats } from '../lib/binauralBeats';
 import { loadUserProfile, generatePersonalizedVisualization } from '../lib/iaPersonnalisee';
 import { textToSpeech } from '../lib/elevenLabs';
 import { stockage } from '../lib/storage';
+import { debloquerAudio } from '../lib/iosAudioUnlock';
 import SOSFlottant from '../lib/SOSFlottant';
 
 type VisuType = 'abondance' | 'guerison' | 'enfant' | 'ressources' | 'safe' | 'dialogue';
@@ -43,6 +44,11 @@ export default function VisualisationsProAudio() {
   const handleDemarrerSession = async () => {
     if (!type) return;
 
+    // 🔓 Débloque l'audio AVANT tout await — indispensable sur iOS Safari.
+    const audio = debloquerAudio();
+    debloquerBinauralBeats();
+    setAudioPlayer(audio);
+
     setIsLoading(true);
     setErreurGeneration(false);
     setPhase('session');
@@ -60,8 +66,8 @@ export default function VisualisationsProAudio() {
         return;
       }
 
-      const audio = new Audio(url);
-      setAudioPlayer(audio);
+      // Réutilise le MÊME élément <audio> déjà débloqué plus haut.
+      audio.src = url;
       await startBinauralBeats('meditation', { type: 'gratitude' });
       audio.play().catch(err => console.error('Error playing:', err));
       setIsPlaying(true);

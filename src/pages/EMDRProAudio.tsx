@@ -1,9 +1,10 @@
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { startBinauralBeats, stopBinauralBeats } from '../lib/binauralBeats';
+import { startBinauralBeats, stopBinauralBeats, debloquerBinauralBeats } from '../lib/binauralBeats';
 import { loadUserProfile, generatePersonalizedEMDRIntro } from '../lib/iaPersonnalisee';
 import { textToSpeech } from '../lib/elevenLabs';
 import { stockage } from '../lib/storage';
+import { debloquerAudio } from '../lib/iosAudioUnlock';
 import SOSFlottant from '../lib/SOSFlottant';
 
 export default function EMDRProAudio() {
@@ -53,6 +54,11 @@ export default function EMDRProAudio() {
   // de la voix avant de proposer de lancer la stimulation bilatérale
   // silencieuse (on ne parle pas pendant les passages EMDR eux-mêmes).
   const handleLancerIntro = async () => {
+    // 🔓 Débloque l'audio AVANT tout await — indispensable sur iOS Safari.
+    const audio = debloquerAudio();
+    debloquerBinauralBeats();
+    setAudioPlayer(audio);
+
     setIsLoading(true);
     setErreurGeneration(false);
     setPhase('intro');
@@ -67,8 +73,8 @@ export default function EMDRProAudio() {
         return;
       }
 
-      const audio = new Audio(url);
-      setAudioPlayer(audio);
+      // Réutilise le MÊME élément <audio> déjà débloqué plus haut.
+      audio.src = url;
       audio.play().catch(err => console.error('Error playing audio:', err));
     } catch (error) {
       console.error('Error generating EMDR intro:', error);

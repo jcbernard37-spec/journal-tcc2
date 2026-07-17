@@ -1,9 +1,10 @@
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { startBinauralBeats, stopBinauralBeats, fadeOutBinauralBeats } from '../lib/binauralBeats';
+import { startBinauralBeats, stopBinauralBeats, fadeOutBinauralBeats, debloquerBinauralBeats } from '../lib/binauralBeats';
 import { loadUserProfile, generatePersonalizedYogaNidra } from '../lib/iaPersonnalisee';
 import { textToSpeech } from '../lib/elevenLabs';
 import { stockage } from '../lib/storage';
+import { debloquerAudio } from '../lib/iosAudioUnlock';
 import SOSFlottant from '../lib/SOSFlottant';
 
 type Duree = 'court' | 'moyen' | 'long';
@@ -42,6 +43,14 @@ export default function YogaNidraProAudio() {
   const handleDemarrerSession = async () => {
     if (!duree) return;
 
+    // 🔓 Débloque l'audio AVANT tout await — indispensable sur iOS Safari,
+    // qui refuse de jouer un son généré après un délai réseau (génération
+    // du script + conversion voix) si ce déblocage n'a pas lieu de façon
+    // synchrone dans le geste de clic.
+    const audio = debloquerAudio();
+    debloquerBinauralBeats();
+    setAudioPlayer(audio);
+
     setIsLoading(true);
     setErreurGeneration(false);
     setPhase('session');
@@ -64,9 +73,9 @@ export default function YogaNidraProAudio() {
         return;
       }
 
-      // Crée l'élément audio
-      const audio = new Audio(url);
-      setAudioPlayer(audio);
+      // Réutilise le MÊME élément <audio> déjà débloqué plus haut — c'est
+      // ce qui permet à iOS d'accepter la lecture malgré le délai réseau.
+      audio.src = url;
 
       // Lance les binaural beats
       await startBinauralBeats('yoga', { duration: duree });
