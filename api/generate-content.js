@@ -25,7 +25,7 @@ export default async function handler(req, res) {
       },
       body: JSON.stringify({
         model: 'claude-sonnet-5',
-        max_tokens: 2000,
+        max_tokens: 8000,
         messages: [
           {
             role: 'user',
@@ -57,7 +57,11 @@ Les scripts doivent être:
     }
 
     const data = await response.json();
-    const content = data.content[0]?.text || '';
+    // ⚠️ La réponse peut contenir un bloc "thinking" avant le bloc "text"
+    // (réflexion interne du modèle) — il faut chercher le bon bloc plutôt
+    // que de supposer que content[0] est toujours le texte.
+    const textBlock = data.content?.find((block) => block.type === 'text');
+    const content = textBlock?.text || '';
 
     // 🔍 Log diagnostic temporaire : à retirer une fois le souci identifié
     if (!content) {
