@@ -4,6 +4,7 @@ import { jouerScriptGuidé, arreter, mettreEnPause, reprendre } from '../lib/voi
 import { genererSession, iaDisponible } from '../lib/sessionIA';
 import { HYPNOSE_RELAXATION, HYPNOSE_CROYANCE, HYPNOSE_RESSOURCE } from '../data/scriptsTherapeutiques';
 import { getZenPlayer } from '../lib/zenMusic';
+import { stockage } from '../lib/storage';
 import SOSFlottant from '../lib/SOSFlottant';
 
 type Niveau = 'relaxation' | 'croyance' | 'ressource';
@@ -61,16 +62,12 @@ export default function Hypnose() {
   };
 
   const sauvegarder = () => {
-    const s = {
-      id: Date.now().toString(), type: 'hypnose',
+    stockage.ajouterEntree('hypnose', {
       nom: NIVEAUX[niveau!].label,
-      duree: Math.round(tempsSession / 60) || 1,
-      date: new Date().toISOString(),
+      duree_minutes: Math.round(tempsSession / 60) || 1,
       efficacite: ressenti * 10,
-    };
-    const arr = JSON.parse(localStorage.getItem('tcc_sessions_therapie') || '[]');
-    arr.push(s);
-    localStorage.setItem('tcc_sessions_therapie', JSON.stringify(arr));
+      ressenti,
+    });
     navigate('/outils-therapeutiques');
   };
 

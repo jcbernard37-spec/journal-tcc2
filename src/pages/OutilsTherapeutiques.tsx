@@ -1,39 +1,37 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-
-interface SessionTherapie {
-  id: string; type: string; nom: string;
-  duree: number; date: string; efficacite: number;
-}
+import { stockage } from '../lib/storage';
 
 // lienPro est optionnel (pages bêta Eleven Labs)
-const OUTILS_DEF: { id: string; titre: string; desc: string; duree: string; icon: string; couleur: string; lien: string; lienPro?: string }[] = [
-  { id: 'emdr',           titre: 'EMDR Visuel',              desc: 'Traite traumas et peurs rapidement',          duree: '5-15 min', icon: '🎯', couleur: '#FF6B6B', lien: '/emdr' },
-  { id: 'yoga',           titre: 'Yoga Nidra',               desc: 'Relaxation profonde et recharge',             duree: '15-60 min', icon: '🧘', couleur: '#4ECDC4', lien: '/yoga-nidra', lienPro: '/yoga-nidra-pro' },
-  { id: 'hypnose',        titre: 'Hypnose Ericksonienne',    desc: 'Reprogramme tes croyances limitantes',        duree: '20-40 min', icon: '🌀', couleur: '#9D84B7', lien: '/hypnose', lienPro: '/hypnose-pro' },
-  { id: 'visualisation',  titre: 'Visualisations Créatrices',desc: 'Manifeste et transforme ta réalité',          duree: '20-50 min', icon: '🌟', couleur: '#FFD93D', lien: '/visualisations', lienPro: '/visualisations-pro' },
-  { id: 'bonus',          titre: 'Outils Bonus',             desc: 'Tapping, Cohérence, Méditation, Affirmations',duree: '5-30 min',  icon: '🎁', couleur: '#6BCF7F', lien: '/outils-bonus' },
+const OUTILS_DEF: { id: string; titre: string; desc: string; duree: string; icon: string; couleur: string; lien: string; lienPro?: string; slugs: string[] }[] = [
+  { id: 'emdr',           titre: 'EMDR Visuel',              desc: 'Traite traumas et peurs rapidement',          duree: '5-15 min', icon: '🎯', couleur: '#FF6B6B', lien: '/emdr', lienPro: '/emdr-pro', slugs: ['emdr', 'emdr_pro'] },
+  { id: 'yoga',           titre: 'Yoga Nidra',               desc: 'Relaxation profonde et recharge',             duree: '15-60 min', icon: '🧘', couleur: '#4ECDC4', lien: '/yoga-nidra', lienPro: '/yoga-nidra-pro', slugs: ['yoga_nidra', 'yoga_nidra_pro'] },
+  { id: 'hypnose',        titre: 'Hypnose Ericksonienne',    desc: 'Reprogramme tes croyances limitantes',        duree: '20-40 min', icon: '🌀', couleur: '#9D84B7', lien: '/hypnose', lienPro: '/hypnose-pro', slugs: ['hypnose', 'hypnose_pro'] },
+  { id: 'visualisation',  titre: 'Visualisations Créatrices',desc: 'Manifeste et transforme ta réalité',          duree: '20-50 min', icon: '🌟', couleur: '#FFD93D', lien: '/visualisations', lienPro: '/visualisations-pro', slugs: ['visualisation', 'visualization_pro'] },
+  { id: 'bonus',          titre: 'Outils Bonus',             desc: 'Tapping, Cohérence, Méditation, Affirmations',duree: '5-30 min',  icon: '🎁', couleur: '#6BCF7F', lien: '/outils-bonus', slugs: [] },
 ];
 
-function calcEfficienceOutil(sessions: SessionTherapie[], typeKeyword: string) {
-  const filtre = sessions.filter(s =>
-    (s.type ?? '').toLowerCase().includes(typeKeyword) ||
-    (s.nom  ?? '').toLowerCase().includes(typeKeyword)
-  );
-  if (filtre.length === 0) return null;
-  const avg = filtre.reduce((sum, s) => sum + (s.efficacite || 0), 0) / filtre.length;
-  return { count: filtre.length, efficacite: Math.round(avg) };
-}
+interface SessionTherapie { nom: string; duree_minutes?: number; efficacite?: number; date: string }
 
 export default function OutilsTherapeutiques() {
-  const [sessions, setSessions] = useState<SessionTherapie[]>([]);
+  const [entrees, setEntrees] = useState<ReturnType<typeof stockage.getEntrees>>([]);
 
   useEffect(() => {
-    const stored = localStorage.getItem('tcc_sessions_therapie');
-    if (stored) try { setSessions(JSON.parse(stored)); } catch (_) {}
+    setEntrees(stockage.getEntrees());
   }, []);
 
-  const totalMin   = sessions.reduce((acc, s) => acc + (s.duree || 0), 0);
+  // Toutes les sessions des outils thérapeutiques (standard + Pro), tous outils confondus
+  const slugsConnus = OUTILS_DEF.flatMap(o => o.slugs);
+  const sessions: SessionTherapie[] = entrees
+    .filter(e => slugsConnus.includes(e.feuille))
+    .map(e => ({
+      nom: (e.valeurs.nom as string) || '',
+      duree_minutes: e.valeurs.duree_minutes as number,
+      efficacite: e.valeurs.efficacite as number,
+      date: e.date,
+    }));
+
+  const totalMin   = sessions.reduce((acc, s) => acc + (s.duree_minutes || 0), 0);
   const efficMoy   = sessions.length > 0
     ? Math.round(sessions.reduce((acc, s) => acc + (s.efficacite || 0), 0) / sessions.length)
     : null;
@@ -75,7 +73,14 @@ export default function OutilsTherapeutiques() {
         {/* Cartes outils */}
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '1rem', marginBottom: '2rem' }}>
           {OUTILS_DEF.map(outil => {
-            const stats = calcEfficienceOutil(sessions, outil.id);
+            const statsEntrees = entrees.filter(e => outil.slugs.includes(e.feuille));
+            const stats = statsEntrees.length > 0
+              ? {
+                  count: statsEntrees.length,
+                  efficacite: Math.round(statsEntrees.reduce((sum, e) => sum + ((e.valeurs.efficacite as number) || 0), 0) / statsEntrees.length),
+                }
+              : null;
+            const lienPrincipal = outil.lienPro || outil.lien;
             return (
               <div key={outil.id} style={{
                 background: 'var(--carte-bg)',
@@ -111,20 +116,20 @@ export default function OutilsTherapeutiques() {
                   )}
                 </div>
 
-                <Link to={outil.lien}>
+                <Link to={lienPrincipal}>
                   <button style={{
                     width: '100%', padding: '0.8rem', border: 'none', borderRadius: '8px',
                     background: outil.couleur, color: '#111', fontWeight: 700,
                     cursor: 'pointer', fontSize: '0.92rem',
                   }}>
-                    Commencer →
+                    {outil.lienPro ? '🔊 Commencer →' : 'Commencer →'}
                   </button>
                 </Link>
 
                 {outil.lienPro && (
-                  <Link to={outil.lienPro} style={{ display: 'block', textAlign: 'center', marginTop: '0.5rem' }}>
+                  <Link to={outil.lien} style={{ display: 'block', textAlign: 'center', marginTop: '0.5rem' }}>
                     <span style={{ fontSize: '0.72rem', color: 'var(--encre-3)', textDecoration: 'underline' }}>
-                      🔊 Version voix Pro (bêta — nécessite clé Eleven Labs)
+                      Version texte simple (sans voix)
                     </span>
                   </Link>
                 )}
@@ -143,10 +148,10 @@ export default function OutilsTherapeutiques() {
                   <div>
                     <div style={{ fontWeight: 600, color: 'var(--encre)', fontSize: '0.95rem' }}>{s.nom}</div>
                     <div style={{ fontSize: '0.8rem', color: 'var(--encre-3)', marginTop: '0.2rem' }}>
-                      {new Date(s.date).toLocaleDateString('fr-FR')} · {s.duree} min
+                      {new Date(s.date).toLocaleDateString('fr-FR')} · {s.duree_minutes || 0} min
                     </div>
                   </div>
-                  {s.efficacite > 0 && (
+                  {(s.efficacite || 0) > 0 && (
                     <div style={{ background: 'var(--accent-pale)', color: 'var(--accent-fonce)', padding: '0.35rem 0.75rem', borderRadius: '6px', fontWeight: 700, fontSize: '0.88rem' }}>
                       {s.efficacite}%
                     </div>

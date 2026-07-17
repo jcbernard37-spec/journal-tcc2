@@ -4,6 +4,7 @@ import { jouerScriptGuidé, arreter, mettreEnPause, reprendre } from '../lib/voi
 import { genererSession } from '../lib/sessionIA';
 import { VIZ_ABONDANCE, VIZ_GUERISON, VIZ_ENFANT, VIZ_RESSOURCES, VIZ_SAFE, VIZ_DIALOGUE } from '../data/scriptsTherapeutiques';
 import { getZenPlayer } from '../lib/zenMusic';
+import { stockage } from '../lib/storage';
 import SOSFlottant from '../lib/SOSFlottant';
 
 type VisuType = 'abondance' | 'guerison' | 'enfant' | 'ressources' | 'safe' | 'dialogue';
@@ -98,15 +99,12 @@ export default function Visualisations() {
   };
 
   const sauvegarder = () => {
-    const s = {
-      id: Date.now().toString(), type: 'visualisation',
+    stockage.ajouterEntree('visualisation', {
       nom: type ? CONFIG[type].titre : '',
-      duree: tempsMin, date: new Date().toISOString(),
+      duree_minutes: tempsMin,
       efficacite: ressenti * 10,
-    };
-    const arr = JSON.parse(localStorage.getItem('tcc_sessions_therapie') || '[]');
-    arr.push(s);
-    localStorage.setItem('tcc_sessions_therapie', JSON.stringify(arr));
+      ressenti,
+    });
     navigate('/outils-therapeutiques');
   };
 

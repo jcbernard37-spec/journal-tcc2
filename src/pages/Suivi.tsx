@@ -13,6 +13,10 @@ const TITRES_SPECIAUX: Record<string, string> = {
   hypnose_pro: '🌙 Hypnose Personnalisée',
   emdr_pro: '👁️ EMDR Bilatéral Guidé',
   visualization_pro: '✨ Visualisations Créatrices',
+  yoga_nidra: '🧘 Yoga Nidra',
+  hypnose: '🌀 Hypnose Ericksonienne',
+  emdr: '🎯 EMDR — Stimulation Bilatérale',
+  visualisation: '🌟 Visualisations Créatrices (simple)',
 };
 
 function titreFeuille(feuilleId: string): string {

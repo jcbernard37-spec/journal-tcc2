@@ -7,6 +7,7 @@ import { personnaliserScript } from '../lib/genreAdapteur';
 import { YOGA_NIDRA_COURT, YOGA_NIDRA_MOYEN, YOGA_NIDRA_LONG } from '../data/scriptsTherapeutiques';
 import type { Segment } from '../data/scriptsTherapeutiques';
 import { getZenPlayer } from '../lib/zenMusic';
+import { stockage } from '../lib/storage';
 import SOSFlottant from '../lib/SOSFlottant';
 
 type Duree = 'court' | 'moyen' | 'long';
@@ -115,19 +116,13 @@ export default function YogaNidra() {
   };
 
   const sauvegarder = () => {
-    const session = {
-      id: Date.now().toString(),
-      type: 'yoga_nidra',
+    stockage.ajouterEntree('yoga_nidra', {
       nom: `Yoga Nidra ${options[duree!].label}`,
-      duree: Math.round(tempsSession / 60),
-      date: new Date().toISOString(),
+      duree_minutes: Math.round(tempsSession / 60),
       efficacite: Math.max(0, (apresScore - avantScore) * 15 + 50),
-      avantApres: { avant: avantScore, apres: apresScore },
-    };
-    const stored = localStorage.getItem('tcc_sessions_therapie') || '[]';
-    const sessions = JSON.parse(stored);
-    sessions.push(session);
-    localStorage.setItem('tcc_sessions_therapie', JSON.stringify(sessions));
+      avant: avantScore,
+      apres: apresScore,
+    });
     navigate('/outils-therapeutiques');
   };
 

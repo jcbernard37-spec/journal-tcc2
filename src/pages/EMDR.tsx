@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { jouerScriptGuidé, arreter } from '../lib/voiceGuide';
 import { EMDR_GUIDANCE } from '../data/scriptsTherapeutiques';
+import { stockage } from '../lib/storage';
 import SOSFlottant from '../lib/SOSFlottant';
 
 type Phase = 'disclaimer' | 'suds' | 'processing' | 'post';
@@ -61,17 +62,13 @@ export default function EMDR() {
 
   const sauvegarder = () => {
     const amelioration = sudsAvant - sudsApres;
-    const s = {
-      id: Date.now().toString(), type: 'emdr',
+    stockage.ajouterEntree('emdr', {
       nom: 'Session EMDR Bilatérale',
-      duree: Math.round(duree / 60) || 1,
-      date: new Date().toISOString(),
+      duree_minutes: Math.round(duree / 60) || 1,
       efficacite: Math.max(0, Math.min(100, amelioration * 10 + 50)),
-      suds: { avant: sudsAvant, apres: sudsApres },
-    };
-    const arr = JSON.parse(localStorage.getItem('tcc_sessions_therapie') || '[]');
-    arr.push(s);
-    localStorage.setItem('tcc_sessions_therapie', JSON.stringify(arr));
+      suds_avant: sudsAvant,
+      suds_apres: sudsApres,
+    });
     navigate('/outils-therapeutiques');
   };
 
