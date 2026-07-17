@@ -5,6 +5,11 @@
       "destination": "/index.html"
     }
   ],
+  "functions": {
+    "api/tts.js": {
+      "maxDuration": 60
+    }
+  },
   "crons": [
     {
       "path": "/api/push-matin",
