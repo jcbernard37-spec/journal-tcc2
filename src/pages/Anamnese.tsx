@@ -200,6 +200,7 @@ export default function Anamnese() {
 
   const sauvegarder = () => {
     localStorage.setItem('tcc_anamnese', JSON.stringify(anamnese));
+    stockage.declencherSync(); // pousse aussi vers Google Drive si connecté
     setEnEdition(false);
     alert('Ton histoire est sauvegardee. L IA va maintenant vraiment te connaitre. 💚');
   };

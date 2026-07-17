@@ -20,6 +20,11 @@ export interface Entree {
 
 const CLE_PROFIL = 'tcc_profil';
 const CLE_ENTREES = 'tcc_entrees';
+// ⚠️ Ces deux clés vivaient jusqu'ici hors du système de sauvegarde : ni
+// l'export manuel, ni la sync Google Drive ne les incluaient. C'est pour
+// ça que "Mon histoire" ne suivait jamais d'un appareil à l'autre.
+const CLE_ANAMNESE = 'tcc_anamnese';
+const CLE_PROFIL_PERSO = 'solco_profil_perso';
 
 export const stockage = {
   getProfil(): Profil | null {
@@ -56,14 +61,34 @@ export const stockage = {
     if (isConnected()) stockage._syncDrive();
   },
 
+  getAnamnese(): Record<string, unknown> | null {
+    try { const a = localStorage.getItem(CLE_ANAMNESE); return a ? JSON.parse(a) : null; }
+    catch { return null; }
+  },
+  getProfilPerso(): Record<string, unknown> | null {
+    try { const p = localStorage.getItem(CLE_PROFIL_PERSO); return p ? JSON.parse(p) : null; }
+    catch { return null; }
+  },
+
+  /**
+   * À appeler après avoir écrit directement dans tcc_anamnese ou
+   * solco_profil_perso (ces deux-là ne passent pas par stockage.setProfil
+   * / ajouterEntree), pour déclencher la sync Drive si connecté.
+   */
+  declencherSync() {
+    if (isConnected()) stockage._syncDrive();
+  },
+
   /** Sync Drive en UN SEUL fichier combiné (évite la confusion 2 fichiers) */
   _syncDrive() {
     const donnees = {
       app: 'Solco',
-      version: 2,
+      version: 3,
       exporteLe: new Date().toISOString(),
       profil: stockage.getProfil(),
       entrees: stockage.getEntrees(),
+      anamnese: stockage.getAnamnese(),
+      profilPerso: stockage.getProfilPerso(),
     };
     saveToDrive('solco-sauvegarde.json', JSON.stringify(donnees)).catch(() => {});
   },
@@ -72,10 +97,12 @@ export const stockage = {
   exporterTout() {
     const donnees = {
       app: 'Solco',
-      version: 2,
+      version: 3,
       exporteLe: new Date().toISOString(),
       profil: stockage.getProfil(),
       entrees: stockage.getEntrees(),
+      anamnese: stockage.getAnamnese(),
+      profilPerso: stockage.getProfilPerso(),
     };
     const blob = new Blob([JSON.stringify(donnees, null, 2)], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
@@ -87,64 +114,95 @@ export const stockage = {
     URL.revokeObjectURL(url);
   },
 
+  // ── Applique des données déjà parsées (partagé par importer() et
+  // restaurerDepuisDrive()) ──
+  _appliquerDonnees(donnees: any): { ok: boolean; profil: boolean; entrees: boolean; anamnese: boolean; profilPerso: boolean; erreur?: string } {
+    let profil = null;
+    let entrees: Entree[] | null = null;
+    let anamnese: Record<string, unknown> | null = null;
+    let profilPerso: Record<string, unknown> | null = null;
+
+    // Format combiné (exporterTout ou sync Drive, v2 ou v3)
+    if (donnees.app === 'Solco' || donnees.app === 'Journal TCC') {
+      profil = donnees.profil || null;
+      entrees = Array.isArray(donnees.entrees) ? donnees.entrees : null;
+      anamnese = donnees.anamnese || null;
+      profilPerso = donnees.profilPerso || null;
+    }
+    // Format 2 — tableau direct d'entrées (ancien entrees.json de Drive)
+    else if (Array.isArray(donnees) && donnees.length > 0 && donnees[0]?.feuille !== undefined) {
+      entrees = donnees;
+    }
+    // Format 3 — objet profil seul (ancien profil.json de Drive)
+    else if (!Array.isArray(donnees) && (donnees.prenom !== undefined || donnees.schemas !== undefined)) {
+      profil = donnees;
+    }
+    else {
+      return { ok: false, profil: false, entrees: false, anamnese: false, profilPerso: false, erreur: 'format_inconnu' };
+    }
+
+    let importeProfil = false;
+    let importeEntrees = false;
+    let importeAnamnese = false;
+    let importeProfilPerso = false;
+
+    if (profil) {
+      localStorage.setItem(CLE_PROFIL, JSON.stringify(profil));
+      importeProfil = true;
+    }
+    if (entrees && Array.isArray(entrees)) {
+      localStorage.setItem(CLE_ENTREES, JSON.stringify(entrees));
+      importeEntrees = true;
+    }
+    if (anamnese) {
+      localStorage.setItem(CLE_ANAMNESE, JSON.stringify(anamnese));
+      importeAnamnese = true;
+    }
+    if (profilPerso) {
+      localStorage.setItem(CLE_PROFIL_PERSO, JSON.stringify(profilPerso));
+      importeProfilPerso = true;
+    }
+
+    if (!importeProfil && !importeEntrees && !importeAnamnese && !importeProfilPerso) {
+      return { ok: false, profil: false, entrees: false, anamnese: false, profilPerso: false, erreur: 'donnees_vides' };
+    }
+
+    return { ok: true, profil: importeProfil, entrees: importeEntrees, anamnese: importeAnamnese, profilPerso: importeProfilPerso };
+  },
+
   // ── Import : restaure depuis n'importe quel format de fichier Solco ──
-  importer(fichier: File): Promise<{ ok: boolean; profil: boolean; entrees: boolean; erreur?: string }> {
+  importer(fichier: File): Promise<{ ok: boolean; profil: boolean; entrees: boolean; anamnese: boolean; profilPerso: boolean; erreur?: string }> {
     return new Promise((resolve) => {
       const lecteur = new FileReader();
       lecteur.onload = () => {
         try {
           const donnees = JSON.parse(lecteur.result as string);
-          let profil = null;
-          let entrees: Entree[] | null = null;
-
-          // Format 1 — fichier combiné (exporterTout ou sync Drive v2)
-          // { app: "Solco", version: 2, profil: {...}, entrees: [...] }
-          if (donnees.app === 'Solco' || donnees.app === 'Journal TCC') {
-            profil  = donnees.profil  || null;
-            entrees = Array.isArray(donnees.entrees) ? donnees.entrees : null;
-          }
-          // Format 2 — tableau direct d'entrées (ancien entrees.json de Drive)
-          // [{id, feuille, date, valeurs}, ...]
-          else if (Array.isArray(donnees) && donnees.length > 0 && donnees[0]?.feuille !== undefined) {
-            entrees = donnees;
-          }
-          // Format 3 — objet profil seul (ancien profil.json de Drive)
-          // {prenom, gad7, schemas, creeLe}
-          else if (!Array.isArray(donnees) && (donnees.prenom !== undefined || donnees.schemas !== undefined)) {
-            profil = donnees;
-          }
-          // Aucun format reconnu — ne pas retourner true silencieusement !
-          else {
-            resolve({ ok: false, profil: false, entrees: false, erreur: 'format_inconnu' });
-            return;
-          }
-
-          let importeProfil  = false;
-          let importeEntrees = false;
-
-          if (profil) {
-            localStorage.setItem(CLE_PROFIL, JSON.stringify(profil));
-            importeProfil = true;
-          }
-          if (entrees && Array.isArray(entrees)) {
-            localStorage.setItem(CLE_ENTREES, JSON.stringify(entrees));
-            importeEntrees = true;
-          }
-
-          // Rien n'a réellement été importé → faux positif à éviter
-          if (!importeProfil && !importeEntrees) {
-            resolve({ ok: false, profil: false, entrees: false, erreur: 'donnees_vides' });
-            return;
-          }
-
-          resolve({ ok: true, profil: importeProfil, entrees: importeEntrees });
+          resolve(stockage._appliquerDonnees(donnees));
         } catch (e) {
-          resolve({ ok: false, profil: false, entrees: false, erreur: 'json_invalide' });
+          resolve({ ok: false, profil: false, entrees: false, anamnese: false, profilPerso: false, erreur: 'json_invalide' });
         }
       };
-      lecteur.onerror = () => resolve({ ok: false, profil: false, entrees: false, erreur: 'lecture_impossible' });
+      lecteur.onerror = () => resolve({ ok: false, profil: false, entrees: false, anamnese: false, profilPerso: false, erreur: 'lecture_impossible' });
       lecteur.readAsText(fichier);
     });
+  },
+
+  // ── Restaure directement depuis le fichier de sauvegarde présent sur
+  // Google Drive (sans passer par un fichier local) — c'est ce qui manquait
+  // pour vraiment "reprendre sur un autre appareil" : se connecter à Drive
+  // ne faisait jusqu'ici que préparer les sync futures, jamais récupérer
+  // ce qui existait déjà là-bas.
+  async restaurerDepuisDrive(): Promise<{ ok: boolean; profil: boolean; entrees: boolean; anamnese: boolean; profilPerso: boolean; erreur?: string }> {
+    try {
+      const contenu = await loadFromDrive('solco-sauvegarde.json');
+      if (!contenu) {
+        return { ok: false, profil: false, entrees: false, anamnese: false, profilPerso: false, erreur: 'aucune_sauvegarde_drive' };
+      }
+      const donnees = JSON.parse(contenu);
+      return stockage._appliquerDonnees(donnees);
+    } catch (e) {
+      return { ok: false, profil: false, entrees: false, anamnese: false, profilPerso: false, erreur: 'json_invalide' };
+    }
   },
 };
 

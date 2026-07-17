@@ -7,6 +7,7 @@ export default function Sauvegarde() {
   const [message, setMessage] = useState('');
   const [googleConnected, setGoogleConnected] = useState(isConnected());
   const [emailGoogle, setEmailGoogle] = useState(getUserEmail());
+  const [restauration, setRestauration] = useState(false);
   const entrees = stockage.getEntrees();
 
   useEffect(() => {
@@ -19,10 +20,44 @@ export default function Sauvegarde() {
     if (ok) {
       setGoogleConnected(true);
       setEmailGoogle(getUserEmail());
-      setMessage('✓ Connecté à Google Drive ! Tes données se synchronisent maintenant automatiquement.');
-      setTimeout(() => setMessage(''), 4000);
+      setMessage('✓ Connecté à Google Drive ! Tes données se synchronisent maintenant automatiquement. Si tu reprends sur un appareil qui a déjà des données sur Drive, clique sur "Restaurer depuis Google Drive" ci-dessous pour les récupérer ici.');
+      setTimeout(() => setMessage(''), 8000);
     } else {
       setMessage('✗ Connexion échouée. Vérifie que tu as accepté l\'autorisation.');
+    }
+  };
+
+  const restaurerDepuisDrive = async () => {
+    const aDesDonneesLocales = entrees.length > 0 || !!stockage.getProfil() || !!stockage.getAnamnese();
+    if (aDesDonneesLocales) {
+      const confirme = window.confirm(
+        'Cet appareil a déjà des données (entrées, histoire ou profil). Restaurer depuis Google Drive va les REMPLACER par celles trouvées là-bas. Continuer ?'
+      );
+      if (!confirme) return;
+    }
+
+    setRestauration(true);
+    setMessage('⏳ Récupération depuis Google Drive…');
+
+    const resultat = await stockage.restaurerDepuisDrive();
+    setRestauration(false);
+
+    if (resultat.ok) {
+      const details = [
+        resultat.profil && 'profil',
+        resultat.entrees && 'entrées',
+        resultat.anamnese && 'histoire',
+        resultat.profilPerso && 'profil personnel',
+      ].filter(Boolean).join(' + ');
+      setMessage(`✓ Restauré depuis Google Drive (${details}). Rechargement…`);
+      setTimeout(() => window.location.reload(), 1500);
+    } else {
+      const msgs: Record<string, string> = {
+        aucune_sauvegarde_drive: '✗ Aucune sauvegarde trouvée sur ce compte Google Drive. As-tu déjà sauvegardé depuis un autre appareil connecté au même compte ?',
+        format_inconnu: '✗ Le fichier trouvé sur Drive n\'est pas reconnu.',
+        json_invalide: '✗ Le fichier sur Drive semble corrompu.',
+      };
+      setMessage(msgs[resultat.erreur || ''] || '✗ La restauration a échoué. Réessaie dans un instant.');
     }
   };
 
@@ -88,6 +123,14 @@ export default function Sauvegarde() {
               <button className="btn btn-doux" onClick={deconnecter} style={{ marginTop: '1rem' }}>
                 Se déconnecter de Google Drive
               </button>
+              <button className="btn btn-primaire" onClick={restaurerDepuisDrive} disabled={restauration}
+                style={{ marginTop: '0.6rem', marginLeft: '0.6rem' }}>
+                {restauration ? '⏳ Restauration…' : '🔄 Restaurer depuis Google Drive'}
+              </button>
+              <p style={{ color: 'var(--encre-3)', fontSize: '0.82rem', marginTop: '0.6rem' }}>
+                Utilise ce bouton sur un nouvel appareil (ex. ton téléphone) pour récupérer ce qui a
+                été sauvegardé depuis un autre appareil connecté au même compte Google.
+              </p>
             </>
           ) : (
             <>

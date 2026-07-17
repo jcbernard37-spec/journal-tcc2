@@ -45,7 +45,10 @@ export async function initializeGoogleAuth(): Promise<boolean> {
     await chargerScriptGoogle();
 
     // Restaurer un token existant s'il est encore valide
-    const savedToken = sessionStorage.getItem('googleAccessToken');
+    // ⚠️ localStorage, pas sessionStorage — sessionStorage est effacé à
+    // chaque fermeture d'onglet, ce qui forçait une reconnexion en
+    // permanence même sur le MÊME appareil.
+    const savedToken = localStorage.getItem('googleAccessToken');
     const savedEmail = localStorage.getItem('googleUserEmail');
     const savedFolder = localStorage.getItem('driveFolderId');
     if (savedToken) {
@@ -83,7 +86,7 @@ export async function connectGoogle(): Promise<boolean> {
         return;
       }
       accessToken = response.access_token;
-      sessionStorage.setItem('googleAccessToken', accessToken);
+      localStorage.setItem('googleAccessToken', accessToken);
 
       // Récupérer l'email de l'utilisateur
       try {
@@ -112,7 +115,7 @@ export async function disconnectGoogle(): Promise<void> {
   accessToken = '';
   userEmail = '';
   driveFolderId = null;
-  sessionStorage.removeItem('googleAccessToken');
+  localStorage.removeItem('googleAccessToken');
   localStorage.removeItem('googleUserEmail');
   localStorage.removeItem('driveFolderId');
 }

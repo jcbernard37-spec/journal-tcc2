@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { getProfil, saveProfil } from '../lib/profilPersonnel';
 import type { Genre } from '../lib/profilPersonnel';
+import { stockage } from '../lib/storage';
 
 interface Props {
   onFermer?: () => void;
@@ -23,6 +24,7 @@ export default function ProfilPerso({ onFermer, compact = false }: Props) {
   const sauvegarder = () => {
     if (!ok) return;
     saveProfil({ prenom: prenom.trim(), genre, age: age ? parseInt(age) : null });
+    stockage.declencherSync(); // pousse aussi vers Google Drive si connecté
     setSauvegarde(true);
     setTimeout(() => { setSauvegarde(false); if (onFermer) onFermer(); }, 1200);
   };
