@@ -59,6 +59,11 @@ Les scripts doivent être:
     const data = await response.json();
     const content = data.content[0]?.text || '';
 
+    // 🔍 Log diagnostic temporaire : à retirer une fois le souci identifié
+    if (!content) {
+      console.error('[DEBUG] Réponse Claude vide. Réponse brute complète:', JSON.stringify(data));
+    }
+
     // Cache le contenu généré
     const cacheKey = `generated_${tool}_${Date.now()}`;
     // NOTE: En production, stocker dans une DB (Redis, Firestore, etc)
