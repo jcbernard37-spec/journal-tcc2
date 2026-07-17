@@ -4,6 +4,27 @@ import { FEUILLES } from '../data/tcc';
 import { stockage, formaterDate } from '../lib/storage';
 import { analyserDernier7Jours } from '../lib/analyse';
 
+// Certaines entrées ne correspondent pas à une "feuille" formulaire classique
+// (conversations IA, séances audio Yoga Nidra/Hypnose/EMDR/Visualisations).
+// On leur donne quand même un titre lisible plutôt que d'afficher un blanc.
+const TITRES_SPECIAUX: Record<string, string> = {
+  conversation_ia: '💬 Conversations avec l\'IA',
+  yoga_nidra_pro: '🧘 Yoga Nidra Personnalisée',
+  hypnose_pro: '🌙 Hypnose Personnalisée',
+  emdr_pro: '👁️ EMDR Bilatéral Guidé',
+  visualization_pro: '✨ Visualisations Créatrices',
+};
+
+function titreFeuille(feuilleId: string): string {
+  const f = FEUILLES.find(x => x.slug === feuilleId);
+  if (f) return f.titre;
+  return TITRES_SPECIAUX[feuilleId] || feuilleId;
+}
+
+function estFeuilleEditable(feuilleId: string): boolean {
+  return FEUILLES.some(x => x.slug === feuilleId);
+}
+
 export default function Suivi() {
   const navigate = useNavigate();
   const entrees = stockage.getEntrees();
@@ -102,7 +123,6 @@ export default function Suivi() {
                 Toutes ({entrees.length})
               </button>
               {Object.keys(entreesParFeuille).map(feuilleId => {
-                const feuille = FEUILLES.find(f => f.slug === feuilleId);
                 const count = entreesParFeuille[feuilleId].length;
                 return (
                   <button
@@ -110,7 +130,7 @@ export default function Suivi() {
                     className={`btn ${filtre === feuilleId ? 'btn-primaire' : 'btn-doux'}`}
                     onClick={() => setFiltre(feuilleId)}
                   >
-                    {feuille?.titre || feuilleId} ({count})
+                    {titreFeuille(feuilleId)} ({count})
                   </button>
                 );
               })}
@@ -121,11 +141,10 @@ export default function Suivi() {
               {afficherTout ? (
                 // Affiche toutes les feuilles
                 Object.keys(entreesParFeuille).map(feuilleId => {
-                  const feuille = FEUILLES.find(f => f.slug === feuilleId);
                   return (
                     <div key={feuilleId}>
                       <h3 style={{ margin: '1.2rem 0 0.6rem', color: 'var(--sauge-fonce)', fontSize: '1rem' }}>
-                        {feuille?.titre}
+                        {titreFeuille(feuilleId)}
                       </h3>
                       <div style={{ display: 'grid', gap: '0.6rem' }}>
                         {entreesParFeuille[feuilleId].map((entree, idx) => (
@@ -190,7 +209,7 @@ export default function Suivi() {
               onClick={e => e.stopPropagation()}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
                 <h3 style={{ margin: 0 }}>
-                  {FEUILLES.find(f => f.slug === entreeSelectionnee.feuille)?.titre}
+                  {titreFeuille(entreeSelectionnee.feuille)}
                 </h3>
                 <button className="btn btn-doux btn-sm" onClick={() => setEntreeSelectionnee(null)}>✕</button>
               </div>
@@ -223,12 +242,14 @@ export default function Suivi() {
                 <button className="btn btn-doux" onClick={() => setEntreeSelectionnee(null)}>
                   Fermer
                 </button>
-                <button className="btn btn-primaire" onClick={() => {
-                  navigate(`/feuille/${entreeSelectionnee.feuille}`);
-                  setEntreeSelectionnee(null);
-                }}>
-                  Éditer cette entrée
-                </button>
+                {estFeuilleEditable(entreeSelectionnee.feuille) && (
+                  <button className="btn btn-primaire" onClick={() => {
+                    navigate(`/feuille/${entreeSelectionnee.feuille}`);
+                    setEntreeSelectionnee(null);
+                  }}>
+                    Éditer cette entrée
+                  </button>
+                )}
               </div>
             </div>
           </div>

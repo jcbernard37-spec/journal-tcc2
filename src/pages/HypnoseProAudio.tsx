@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { startBinauralBeats, stopBinauralBeats, fadeOutBinauralBeats } from '../lib/binauralBeats';
 import { loadUserProfile, generatePersonalizedHypnosis } from '../lib/iaPersonnalisee';
 import { textToSpeech } from '../lib/elevenLabs';
+import { stockage } from '../lib/storage';
 import SOSFlottant from '../lib/SOSFlottant';
 
 type Niveau = 'relaxation' | 'croyance' | 'ressource';
@@ -101,22 +102,15 @@ export default function HypnoseProAudio() {
   };
 
   const handleSauvegarder = () => {
-    const session = {
-      id: Date.now().toString(),
-      type: 'hypnose_pro',
+    stockage.ajouterEntree('hypnose_pro', {
       nom: niveaux[niveau!].titre,
-      duree: sessionTime / 60,
-      date: new Date().toISOString(),
+      duree_minutes: Math.round(sessionTime / 60),
       efficacite: apresScore * 15,
+      apres: apresScore,
       croyance,
-      audioGenerated: !!audioUrl,
-    };
+      audio_genere: !!audioUrl,
+    });
 
-    const stored = localStorage.getItem('tcc_sessions_therapie') || '[]';
-    const sessions = JSON.parse(stored);
-    sessions.push(session);
-    localStorage.setItem('tcc_sessions_therapie', JSON.stringify(sessions));
-    
     alert('Session Hypnose sauvegardée!');
     navigate('/outils-therapeutiques');
   };

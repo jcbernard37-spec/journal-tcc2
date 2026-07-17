@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { startBinauralBeats, stopBinauralBeats, fadeOutBinauralBeats } from '../lib/binauralBeats';
 import { loadUserProfile, generatePersonalizedVisualization } from '../lib/iaPersonnalisee';
 import { textToSpeech } from '../lib/elevenLabs';
+import { stockage } from '../lib/storage';
 import SOSFlottant from '../lib/SOSFlottant';
 
 type VisuType = 'abondance' | 'guerison' | 'enfant' | 'ressources' | 'safe' | 'dialogue';
@@ -111,21 +112,14 @@ export default function VisualisationsProAudio() {
   };
 
   const handleSauvegarder = () => {
-    const session = {
-      id: Date.now().toString(),
-      type: 'visualization_pro',
+    stockage.ajouterEntree('visualization_pro', {
       nom: visualisations[type!].titre,
-      duree: sessionTime / 60,
-      date: new Date().toISOString(),
+      duree_minutes: Math.round(sessionTime / 60),
       efficacite: ressentieScore * 15,
-      audioGenerated: !!audioUrl,
-    };
+      ressenti: ressentieScore,
+      audio_genere: !!audioUrl,
+    });
 
-    const stored = localStorage.getItem('tcc_sessions_therapie') || '[]';
-    const sessions = JSON.parse(stored);
-    sessions.push(session);
-    localStorage.setItem('tcc_sessions_therapie', JSON.stringify(sessions));
-    
     alert('Session Visualization sauvegardee!');
     navigate('/outils-therapeutiques');
   };

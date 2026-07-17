@@ -1,13 +1,14 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { startBinauralBeats, stopBinauralBeats } from '../lib/binauralBeats';
-import { loadUserProfile } from '../lib/iaPersonnalisee';
+import { loadUserProfile, generatePersonalizedEMDRIntro } from '../lib/iaPersonnalisee';
 import { textToSpeech } from '../lib/elevenLabs';
+import { stockage } from '../lib/storage';
 import SOSFlottant from '../lib/SOSFlottant';
 
 export default function EMDRProAudio() {
   const navigate = useNavigate();
-  const [phase, setPhase] = useState<'info' | 'suds' | 'ressource' | 'processing' | 'post'>('info');
+  const [phase, setPhase] = useState<'info' | 'suds' | 'intro' | 'processing' | 'post'>('info');
   const [sudsAvant, setSudsAvant] = useState(7);
   const [sudsApres, setSudsApres] = useState(7);
   const [ressource, setRessource] = useState('');
@@ -15,6 +16,10 @@ export default function EMDRProAudio() {
   const [isProcessing, setIsProcessing] = useState(false);
   const [direction, setDirection] = useState<'left' | 'right'>('left');
   const [cycleCount, setCycleCount] = useState(0);
+  const [isLoading, setIsLoading] = useState(false);
+  const [erreurGeneration, setErreurGeneration] = useState(false);
+  const [audioPlayer, setAudioPlayer] = useState<HTMLAudioElement | null>(null);
+  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   useEffect(() => {
     if (phase === 'processing' && isProcessing) {
@@ -34,15 +39,47 @@ export default function EMDRProAudio() {
     }
   }, [phase, isProcessing]);
 
-  // Coupe systématiquement les binaural beats si l'utilisateur quitte la
-  // page (navigation, fermeture d'onglet) pendant un traitement en cours.
+  // Coupe systématiquement le son et les binaural beats si l'utilisateur
+  // quitte la page (navigation, fermeture d'onglet) à tout moment.
   useEffect(() => {
     return () => {
+      audioPlayer?.pause();
       stopBinauralBeats();
+      if (intervalRef.current) clearInterval(intervalRef.current);
     };
-  }, []);
+  }, [audioPlayer]);
+
+  // Génère et joue l'introduction vocale personnalisée, puis attend la fin
+  // de la voix avant de proposer de lancer la stimulation bilatérale
+  // silencieuse (on ne parle pas pendant les passages EMDR eux-mêmes).
+  const handleLancerIntro = async () => {
+    setIsLoading(true);
+    setErreurGeneration(false);
+    setPhase('intro');
+
+    try {
+      const profile = loadUserProfile();
+      const script = await generatePersonalizedEMDRIntro(sudsAvant, ressource, profile);
+      const url = await textToSpeech(script);
+
+      if (!url) {
+        setErreurGeneration(true);
+        return;
+      }
+
+      const audio = new Audio(url);
+      setAudioPlayer(audio);
+      audio.play().catch(err => console.error('Error playing audio:', err));
+    } catch (error) {
+      console.error('Error generating EMDR intro:', error);
+      setErreurGeneration(true);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const handleDemarrerTraitement = async () => {
+    audioPlayer?.pause();
     setIsProcessing(true);
     setPhase('processing');
     await startBinauralBeats('emdr');
@@ -54,32 +91,27 @@ export default function EMDRProAudio() {
     setPhase('post');
   };
 
-  // Le bouton "Retour" doit couper les binaural beats avant de quitter la
-  // page, sinon ils continuent de jouer en arrière-plan.
+  // Le bouton "Retour" doit couper le son et les binaural beats avant de
+  // quitter la page, sinon ils continuent de jouer en arrière-plan.
   const handleRetour = () => {
+    audioPlayer?.pause();
     setIsProcessing(false);
+    if (intervalRef.current) clearInterval(intervalRef.current);
     stopBinauralBeats();
     navigate('/outils-therapeutiques');
   };
 
   const handleSauvegarder = () => {
-    const session = {
-      id: Date.now().toString(),
-      type: 'emdr_pro',
+    stockage.ajouterEntree('emdr_pro', {
       nom: 'Session EMDR Bilatérale Guidée',
-      duree,
-      date: new Date().toISOString(),
-      suds: { avant: sudsAvant, apres: sudsApres },
+      duree_minutes: Math.round(duree / 60),
+      suds_avant: sudsAvant,
+      suds_apres: sudsApres,
       efficacite: (sudsAvant - sudsApres) * 10,
       cycles: cycleCount,
       ressource,
-    };
+    });
 
-    const stored = localStorage.getItem('tcc_sessions_therapie') || '[]';
-    const sessions = JSON.parse(stored);
-    sessions.push(session);
-    localStorage.setItem('tcc_sessions_therapie', JSON.stringify(sessions));
-    
     alert('Session EMDR PRO sauvegardee!');
     navigate('/outils-therapeutiques');
   };
@@ -172,7 +204,7 @@ export default function EMDRProAudio() {
                 Retour
               </button>
               <button
-                onClick={handleDemarrerTraitement}
+                onClick={handleLancerIntro}
                 disabled={sudsAvant === 0}
                 style={{
                   flex: 1,
@@ -188,6 +220,80 @@ export default function EMDRProAudio() {
                 Commencer Traitement
               </button>
             </div>
+          </div>
+        )}
+
+        {phase === 'intro' && erreurGeneration && (
+          <div style={{ background: 'white', borderRadius: '12px', padding: '1.8rem', border: '1px solid #E8E6E1', textAlign: 'center' }}>
+            <h2 style={{ fontSize: '1.4rem', marginBottom: '1rem', color: '#222' }}>
+              Un souci technique
+            </h2>
+            <p style={{ color: '#666', marginBottom: '1.4rem' }}>
+              La génération de ton introduction personnalisée n'a pas fonctionné cette fois-ci.
+              Rien n'est perdu — tu peux réessayer, ou revenir plus tard.
+            </p>
+            <div style={{ display: 'flex', gap: '0.8rem' }}>
+              <button
+                onClick={() => setPhase('suds')}
+                style={{ flex: 1, padding: '1rem', background: '#F0F0ED', border: '1.5px solid #E0DDD8', borderRadius: '8px', cursor: 'pointer', fontWeight: 600 }}
+              >
+                Retour
+              </button>
+              <button
+                onClick={handleLancerIntro}
+                style={{ flex: 1, padding: '1rem', background: '#FF6B6B', color: 'white', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: 600 }}
+              >
+                Réessayer
+              </button>
+            </div>
+          </div>
+        )}
+
+        {phase === 'intro' && !erreurGeneration && (
+          <div style={{ background: 'white', borderRadius: '12px', padding: '1.8rem', border: '1px solid #E8E6E1', textAlign: 'center' }}>
+            <h2 style={{ fontSize: '1.4rem', marginBottom: '1rem', color: '#222' }}>
+              {isLoading ? 'Préparation de ton introduction...' : 'Introduction guidée'}
+            </h2>
+
+            <div
+              style={{
+                width: '100px',
+                height: '100px',
+                margin: '2rem auto',
+                borderRadius: '50%',
+                background: 'linear-gradient(135deg, #FF6B6B, #FFB3B3)',
+                animation: 'pulse 3s ease-in-out infinite',
+              }}
+            />
+
+            {isLoading ? (
+              <p style={{ color: '#666', marginBottom: '1.4rem' }}>
+                Ta voix personnalisée se prépare, quelques instants...
+              </p>
+            ) : (
+              <p style={{ color: '#666', marginBottom: '1.4rem' }}>
+                🎙️ Écoute l'introduction jusqu'au bout, puis lance la stimulation
+                bilatérale silencieuse quand tu te sens prête.
+              </p>
+            )}
+
+            <button
+              onClick={handleDemarrerTraitement}
+              disabled={isLoading}
+              style={{
+                width: '100%',
+                padding: '1.2rem',
+                background: isLoading ? '#ccc' : '#FF6B6B',
+                color: 'white',
+                border: 'none',
+                borderRadius: '8px',
+                cursor: isLoading ? 'default' : 'pointer',
+                fontWeight: 600,
+                fontSize: '1.1rem',
+              }}
+            >
+              Lancer la stimulation bilatérale
+            </button>
           </div>
         )}
 

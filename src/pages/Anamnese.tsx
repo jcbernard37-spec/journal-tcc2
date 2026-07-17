@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { stockage } from '../lib/storage';
 import { BoutonMicroAvance } from '../lib/BoutonMicroAvance';
 import ProfilPerso from '../components/ProfilPerso';
@@ -23,6 +24,7 @@ interface Anamnese {
 }
 
 export default function Anamnese() {
+  const navigate = useNavigate();
   const [etape, setEtape] = useState(0);
   const [anamnese, setAnamnese] = useState<Anamnese>(() => {
     const stored = localStorage.getItem('tcc_anamnese');
@@ -220,6 +222,25 @@ export default function Anamnese() {
           <div style={{ marginBottom: '1.5rem' }}>
             <ProfilPerso />
           </div>
+
+          {pourcentageComplete > 0 && (
+            <button
+              className="btn btn-ambre apparition"
+              style={{
+                width: '100%',
+                marginBottom: '1.5rem',
+                padding: '1rem 1.2rem',
+                fontSize: '1rem',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '0.5rem',
+              }}
+              onClick={() => navigate('/assistant', { state: { autoStart: true } })}
+            >
+              🎙️ Parler à l'IA de mon histoire
+            </button>
+          )}
 
           {pourcentageComplete === 0 ? (
             <div className="carte" style={{ textAlign: 'center', padding: '2rem 1.2rem' }}>

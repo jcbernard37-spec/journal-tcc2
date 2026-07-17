@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { startBinauralBeats, stopBinauralBeats, fadeOutBinauralBeats } from '../lib/binauralBeats';
 import { loadUserProfile, generatePersonalizedYogaNidra } from '../lib/iaPersonnalisee';
 import { textToSpeech } from '../lib/elevenLabs';
+import { stockage } from '../lib/storage';
 import SOSFlottant from '../lib/SOSFlottant';
 
 type Duree = 'court' | 'moyen' | 'long';
@@ -112,22 +113,15 @@ export default function YogaNidraProAudio() {
   };
 
   const handleSauvegarder = () => {
-    const session = {
-      id: Date.now().toString(),
-      type: 'yoga_nidra_pro',
+    stockage.ajouterEntree('yoga_nidra_pro', {
       nom: `Yoga Nidra Personnalisée ${durees[duree!].titre}`,
-      duree: sessionTime / 60,
-      date: new Date().toISOString(),
+      duree_minutes: Math.round(sessionTime / 60),
       efficacite: Math.max(0, (apresScore - avantScore) * 15),
-      avantApres: { avant: avantScore, apres: apresScore },
-      audioGenerated: !!audioUrl,
-    };
+      avant: avantScore,
+      apres: apresScore,
+      audio_genere: !!audioUrl,
+    });
 
-    const stored = localStorage.getItem('tcc_sessions_therapie') || '[]';
-    const sessions = JSON.parse(stored);
-    sessions.push(session);
-    localStorage.setItem('tcc_sessions_therapie', JSON.stringify(sessions));
-    
     alert('Session Yoga Nidra sauvegardée!');
     navigate('/outils-therapeutiques');
   };

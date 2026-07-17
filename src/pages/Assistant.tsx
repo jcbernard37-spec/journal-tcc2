@@ -1,8 +1,9 @@
 import { useState, useRef, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { converserAvecCompagnon, MessageChat } from '../lib/ia';
 import { stockage } from '../lib/storage';
 import { BoutonMicro } from '../lib/BoutonMicro';
+import { textToSpeech } from '../lib/elevenLabs';
 
 // Suggestions d'amorce pour démarrer
 const AMORCES = [
@@ -13,7 +14,7 @@ const AMORCES = [
 ];
 
 // Détecte si l'IA suggère un outil, pour afficher un raccourci
-const OUTILS_LIENS: { motif: RegExp; slug: string; label: string }[] = [
+const OUTILS_LIENS: { motif: RegExp; slug: string; label: string; route?: boolean }[] = [
   { motif: /journal de pensées|BEC/i, slug: 'bec', label: '📋 Ouvrir le Journal de pensées' },
   { motif: /arbre actionnable|actionnable ou pas/i, slug: 'actionnable', label: '🌳 Ouvrir l\'Arbre actionnable' },
   { motif: /parking/i, slug: 'parking', label: '🅿️ Ouvrir le Parking à inquiétudes' },
@@ -22,19 +23,57 @@ const OUTILS_LIENS: { motif: RegExp; slug: string; label: string }[] = [
   { motif: /schémas? profonds?|sacrifice de soi|abandon/i, slug: 'schemas', label: '🧠 Ouvrir Mes schémas profonds' },
   { motif: /comportements? de sécurité/i, slug: 'securite', label: '🛡️ Ouvrir Comportements de sécurité' },
   { motif: /plan de crise/i, slug: 'crise', label: '🆘 Ouvrir le Plan de crise' },
+  { motif: /yoga nidra/i, slug: 'yoga-nidra-pro', label: '🧘 Ouvrir Yoga Nidra Personnalisée', route: true },
+  { motif: /hypnose/i, slug: 'hypnose-pro', label: '🌙 Ouvrir Hypnose Personnalisée', route: true },
+  { motif: /emdr/i, slug: 'emdr-pro', label: '👁️ Ouvrir EMDR Bilatéral Guidé', route: true },
+  { motif: /visualisation/i, slug: 'visualisations-pro', label: '✨ Ouvrir les Visualisations Créatrices', route: true },
 ];
+
+const MESSAGE_DEPUIS_ANAMNESE =
+  'Je viens de mettre à jour mon histoire personnelle (mon anamnèse). ' +
+  'Prends le temps de la regarder, puis dis-moi ce que tu en comprends, ' +
+  'et surtout : quels outils de l\'application seraient les plus utiles pour moi maintenant, et pourquoi ?';
 
 export default function Assistant() {
   const navigate = useNavigate();
+  const location = useLocation();
   const profil = stockage.getProfil();
   const [messages, setMessages] = useState<MessageChat[]>([]);
   const [saisie, setSaisie] = useState('');
   const [chargement, setChargement] = useState(false);
+  const [voixActivee, setVoixActivee] = useState(true);
+  const [audioEnCours, setAudioEnCours] = useState(false);
+  const [sauvegarde, setSauvegarde] = useState(false);
   const finRef = useRef<HTMLDivElement>(null);
+  const audioPlayerRef = useRef<HTMLAudioElement | null>(null);
+  const demarrageAuto = useRef(false);
 
   useEffect(() => {
     finRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages, chargement]);
+
+  // Coupe l'audio si on quitte la page en pleine lecture
+  useEffect(() => {
+    return () => {
+      audioPlayerRef.current?.pause();
+    };
+  }, []);
+
+  const lireAVoixHaute = async (texte: string) => {
+    if (!voixActivee) return;
+    audioPlayerRef.current?.pause();
+    setAudioEnCours(true);
+    const url = await textToSpeech(texte);
+    if (!url) {
+      setAudioEnCours(false);
+      return;
+    }
+    const audio = new Audio(url);
+    audioPlayerRef.current = audio;
+    audio.onended = () => setAudioEnCours(false);
+    audio.onerror = () => setAudioEnCours(false);
+    audio.play().catch(() => setAudioEnCours(false));
+  };
 
   const envoyer = async (texte: string) => {
     const message = texte.trim();
@@ -44,10 +83,41 @@ export default function Assistant() {
     setMessages(nouveauxMessages);
     setSaisie('');
     setChargement(true);
+    setSauvegarde(false);
 
     const { ok, texte: reponse } = await converserAvecCompagnon(nouveauxMessages);
     setMessages([...nouveauxMessages, { role: 'assistant', content: ok ? reponse : reponse }]);
     setChargement(false);
+
+    if (ok && reponse) {
+      lireAVoixHaute(reponse);
+    }
+  };
+
+  // Démarrage automatique si on arrive depuis "Mon histoire"
+  useEffect(() => {
+    if (location.state?.autoStart && !demarrageAuto.current) {
+      demarrageAuto.current = true;
+      envoyer(MESSAGE_DEPUIS_ANAMNESE);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [location.state]);
+
+  // Sauvegarde la conversation comme une vraie séance dans "Mon suivi"
+  const sauvegarderSession = () => {
+    if (messages.length === 0) return;
+    const premierMessageUtilisateur = messages.find(m => m.role === 'user')?.content || '';
+    const transcript = messages
+      .map(m => `${m.role === 'user' ? 'Moi' : 'IA'} : ${m.content}`)
+      .join('\n\n');
+
+    stockage.ajouterEntree('conversation_ia', {
+      resume: premierMessageUtilisateur.substring(0, 120),
+      transcript,
+      nombre_messages: messages.length,
+    });
+
+    setSauvegarde(true);
   };
 
   // Cherche un outil suggéré dans le dernier message de l'assistant
@@ -59,11 +129,25 @@ export default function Assistant() {
   return (
     <div className="page">
       <div className="conteneur-etroit apparition" style={{ paddingTop: '2rem' }}>
-        <h1>💬 Parler à l'assistant</h1>
-        <p style={{ color: 'var(--encre-2)', marginTop: '0.4rem' }}>
-          Dis-moi ce que tu ressens maintenant. Je t'aide à y voir clair et je t'oriente
-          vers le bon outil. Je ne remplace pas ta thérapeute — je t'accompagne entre les séances.
-        </p>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '0.8rem' }}>
+          <div>
+            <h1>💬 Parler à l'assistant</h1>
+            <p style={{ color: 'var(--encre-2)', marginTop: '0.4rem' }}>
+              Dis-moi ce que tu ressens maintenant. Je t'aide à y voir clair et je t'oriente
+              vers le bon outil. Je ne remplace pas ta thérapeute — je t'accompagne entre les séances.
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={() => setVoixActivee(v => !v)}
+            title={voixActivee ? 'Couper la voix' : 'Activer la voix'}
+            aria-label={voixActivee ? 'Couper la voix' : 'Activer la voix'}
+            className="btn btn-doux"
+            style={{ flexShrink: 0, padding: '0.6rem 0.9rem' }}
+          >
+            {voixActivee ? '🔊' : '🔇'}
+          </button>
+        </div>
 
         {/* Zone de conversation */}
         <div className="carte" style={{ marginTop: '1.4rem', minHeight: 300, display: 'flex', flexDirection: 'column', gap: '0.9rem' }}>
@@ -94,6 +178,11 @@ export default function Assistant() {
               L'assistant réfléchit…
             </div>
           )}
+          {!chargement && audioEnCours && (
+            <div style={{ alignSelf: 'flex-start', color: 'var(--sauge-fonce)', fontStyle: 'italic', padding: '0.5rem 1rem' }}>
+              🔊 Lecture audio en cours…
+            </div>
+          )}
           <div ref={finRef} />
         </div>
 
@@ -102,9 +191,21 @@ export default function Assistant() {
           <button
             className="btn btn-ambre apparition"
             style={{ width: '100%', marginTop: '0.8rem' }}
-            onClick={() => navigate(`/feuille/${outilSuggere.slug}`)}
+            onClick={() => navigate(outilSuggere.route ? `/${outilSuggere.slug}` : `/feuille/${outilSuggere.slug}`)}
           >
             {outilSuggere.label}
+          </button>
+        )}
+
+        {/* Sauvegarder la conversation comme une séance dans Mon suivi */}
+        {messages.length > 0 && !chargement && (
+          <button
+            className="btn btn-doux"
+            style={{ width: '100%', marginTop: '0.6rem' }}
+            onClick={sauvegarderSession}
+            disabled={sauvegarde}
+          >
+            {sauvegarde ? '✓ Séance enregistrée dans Mon suivi' : '💾 Terminer et sauvegarder cette séance'}
           </button>
         )}
 

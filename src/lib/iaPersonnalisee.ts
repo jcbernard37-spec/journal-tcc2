@@ -253,6 +253,45 @@ Ton: Professionnel, indirect, Ericksonien, riche de métaphores
 }
 
 /**
+ * Génère une introduction vocale PERSONNALISÉE pour une session EMDR
+ * (courte induction avant la phase silencieuse de stimulation bilatérale —
+ * en EMDR, on ne parle pas pendant les passages de stimulation eux-mêmes)
+ */
+export async function generatePersonalizedEMDRIntro(
+  sudsAvant: number,
+  ressource: string,
+  profile: UserProfile
+): Promise<string> {
+  const prompt = `
+Tu es un praticien EMDR expert, doux et rassurant.
+
+Crée une courte introduction parlée (1 à 2 minutes maximum) pour préparer cette personne
+à une session de stimulation bilatérale EMDR (mouvements oculaires gauche-droite).
+
+Contexte:
+- Son niveau de détresse actuel (SUDS): ${sudsAvant}/10
+- Sa ressource de sécurité choisie: "${ressource || 'sa propre force intérieure'}"
+
+Structure requise:
+1. Accueil bienveillant, rappel que ceci n'est pas un substitut à un suivi avec un
+   thérapeute EMDR certifié, mais un outil d'auto-régulation
+2. Installation de la ressource de sécurité ("${ressource || 'sa force intérieure'}") :
+   invite-la à se connecter à cette ressource maintenant
+3. Explique simplement ce qui va suivre : elle va suivre du regard une stimulation
+   visuelle bilatérale, en pensant simplement à sa ressource ou en laissant venir
+   ce qui vient, sans jugement
+4. Rappelle qu'elle peut s'arrêter à tout moment si c'est trop intense, et que le
+   bouton SOS est toujours disponible
+5. Termine en indiquant que la stimulation silencieuse va commencer
+
+Ton: Calme, professionnel, rassurant, jamais pressé.
+Écris UNIQUEMENT le texte à voix haute, prêt pour synthèse vocale, sans titre ni note.
+  `;
+
+  return callClaudeAPI(prompt);
+}
+
+/**
  * Génère une Visualisation PERSONNALISÉE
  */
 export async function generatePersonalizedVisualization(
