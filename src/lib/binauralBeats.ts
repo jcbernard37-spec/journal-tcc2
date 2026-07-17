@@ -135,15 +135,18 @@ export class BinauralBeatsGenerator {
       rightGain.gain.value = config.volume;
       masterGain.gain.value = 0.8; // Master volume
 
-      // Splitter stéréo
-      const splitter = ctx.createChannelSplitter(2);
+      // Fusionne les deux oscillateurs mono (gauche/droite) en un seul flux stéréo.
+      // ⚠️ ChannelMergerNode (2 entrées → 1 sortie stéréo), PAS ChannelSplitterNode
+      // (1 entrée → 2 sorties) — c'est l'inverse qu'il fallait utiliser ici, d'où
+      // l'erreur "input index (1) exceeds number of inputs (1)".
+      const merger = ctx.createChannelMerger(2);
 
       // Connecte
       leftOsc.connect(leftGain);
       rightOsc.connect(rightGain);
-      leftGain.connect(splitter, 0, 0);
-      rightGain.connect(splitter, 0, 1);
-      splitter.connect(masterGain);
+      leftGain.connect(merger, 0, 0);
+      rightGain.connect(merger, 0, 1);
+      merger.connect(masterGain);
       masterGain.connect(ctx.destination);
 
       // Démarre
