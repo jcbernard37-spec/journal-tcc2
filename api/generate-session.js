@@ -13,7 +13,7 @@ export default async function handler(req, res) {
   const accord = genre === 'F' ? 'e' : '';
   const pronoms = genre === 'F' ? { sujet: 'elle', possessif: 'sa', det: 'une', vouv: 'tu' } : { sujet: 'il', possessif: 'son', det: 'un', vouv: 'tu' };
 
-  const outilsDescriptions: Record<string, string> = {
+  const outilsDescriptions = {
     yoga_nidra: 'Yoga Nidra (relaxation guidée profonde avec scan corporel, sankalpa et visualisation)',
     hypnose_relaxation: 'Hypnose Ericksonienne de relaxation profonde',
     hypnose_croyance: 'Hypnose pour changer une croyance limitante',
@@ -29,7 +29,7 @@ export default async function handler(req, res) {
   };
 
   const schemasTexte = analyse?.schemas_dominants
-    ? analyse.schemas_dominants.map((s: { nom: string; intensite: string }) => `${s.nom} (${s.intensite})`).join(', ')
+    ? analyse.schemas_dominants.map((s) => `${s.nom} (${s.intensite})`).join(', ')
     : 'non analysés';
 
   const prompt = `Tu es un thérapeute expert combinant TCC, hypnose Ericksonienne, Yoga Nidra, neurosciences (Huberman), pleine conscience (Kabat-Zinn) et suggestion indirecte (Erickson).
@@ -78,7 +78,7 @@ RÉPONDS UNIQUEMENT avec un tableau JSON :
       headers: { 'Content-Type': 'application/json', 'x-api-key': apiKey, 'anthropic-version': '2023-06-01' },
       body: JSON.stringify({
         model: 'claude-sonnet-5',
-        max_tokens: 4000,
+        max_tokens: 8000,
         messages: [{ role: 'user', content: prompt }],
       }),
     });
@@ -89,12 +89,16 @@ RÉPONDS UNIQUEMENT avec un tableau JSON :
     }
 
     const data = await response.json();
-    const raw = data.content[0]?.text || '';
+    // ⚠️ La réponse peut contenir un bloc "thinking" avant le bloc "text"
+    // (réflexion interne du modèle) — il faut chercher le bon bloc plutôt
+    // que de supposer que content[0] est toujours le texte.
+    const textBlock = data.content?.find((block) => block.type === 'text');
+    const raw = textBlock?.text || '';
     const clean = raw.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
     const segments = JSON.parse(clean);
 
     res.status(200).json({ ok: true, segments });
   } catch (err) {
-    res.status(500).json({ error: (err as Error).message });
+    res.status(500).json({ error: err.message });
   }
 }

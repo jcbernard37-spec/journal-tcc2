@@ -17,6 +17,10 @@ const TITRES_SPECIAUX: Record<string, string> = {
   hypnose: '🌀 Hypnose Ericksonienne',
   emdr: '🎯 EMDR — Stimulation Bilatérale',
   visualisation: '🌟 Visualisations Créatrices (simple)',
+  tapping: '🫆 Tapping EFT',
+  coherence: '💓 Cohérence Cardiaque',
+  meditation: '🙏 Méditation Bienveillance',
+  affirmations: '✨ Affirmations Guidées',
 };
 
 function titreFeuille(feuilleId: string): string {

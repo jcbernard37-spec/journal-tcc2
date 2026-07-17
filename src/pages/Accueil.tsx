@@ -1,13 +1,15 @@
 import { Link } from 'react-router-dom';
 import { useEffect, useState } from 'react';
+import { stockage } from '../lib/storage';
 
 export default function Accueil() {
   const [hasStarted, setHasStarted] = useState(false);
 
   useEffect(() => {
-    const sessions = localStorage.getItem('tcc_sessions_therapie');
     const anamnese = localStorage.getItem('tcc_anamnese');
-    setHasStarted(!!(sessions || anamnese));
+    const aDejaUnProfil = !!stockage.getProfil();
+    const aDesEntrees = stockage.getEntrees().length > 0;
+    setHasStarted(!!anamnese || aDejaUnProfil || aDesEntrees);
   }, []);
 
   return (

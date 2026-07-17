@@ -4,6 +4,7 @@ import { jouerScriptGuidé, arreter, mettreEnPause, reprendre } from '../lib/voi
 import { genererSession } from '../lib/sessionIA';
 import { TAPPING_EFT, COHERENCE_CARDIAQUE, MEDITATION_BIENVEILLANCE, AFFIRMATIONS_GUIDEES } from '../data/scriptsTherapeutiques';
 import { getZenPlayer } from '../lib/zenMusic';
+import { stockage } from '../lib/storage';
 import SOSFlottant from '../lib/SOSFlottant';
 
 type Outil = 'tapping' | 'coherence' | 'meditation' | 'affirmations';
@@ -67,10 +68,11 @@ export default function OutilsBonus() {
   };
 
   const sauvegarder = () => {
-    const s = { id: Date.now().toString(), type: outil, nom: OUTILS_CONFIG[outil!].titre, duree: Math.round(tempsSession / 60), date: new Date().toISOString(), efficacite: 70 };
-    const arr = JSON.parse(localStorage.getItem('tcc_sessions_therapie') || '[]');
-    arr.push(s);
-    localStorage.setItem('tcc_sessions_therapie', JSON.stringify(arr));
+    stockage.ajouterEntree(outil!, {
+      nom: OUTILS_CONFIG[outil!].titre,
+      duree_minutes: Math.round(tempsSession / 60),
+      efficacite: 70,
+    });
     zenPlayer.stop();
     setPhase('choix');
     setOutil(null);
