@@ -46,8 +46,6 @@ Les scripts doivent être:
 - Prêts à lire à haute voix (pas de descriptions techniques)
 
 Écris UNIQUEMENT le script, sans preamble.`,
-          },
-        ],
       }),
     });
 
