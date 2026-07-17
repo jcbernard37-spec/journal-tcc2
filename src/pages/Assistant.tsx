@@ -67,7 +67,16 @@ export default function Assistant() {
     setLectureBloquee(false);
     dernierTexteRef.current = texte;
     setAudioEnCours(true);
-    const url = await textToSpeech(texte);
+
+    let url: string | null;
+    try {
+      url = await textToSpeech(texte);
+    } catch (error) {
+      console.error('Erreur synthèse vocale:', error);
+      setAudioEnCours(false);
+      return;
+    }
+
     if (!url) {
       setAudioEnCours(false);
       return;

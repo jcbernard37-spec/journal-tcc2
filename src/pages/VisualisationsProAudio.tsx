@@ -20,6 +20,7 @@ export default function VisualisationsProAudio() {
   const [sessionTime, setSessionTime] = useState(0);
   const [audioPlayer, setAudioPlayer] = useState<HTMLAudioElement | null>(null);
   const [erreurGeneration, setErreurGeneration] = useState(false);
+  const [erreurMessage, setErreurMessage] = useState('');
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   // Coupe systématiquement le son et les binaural beats si l'utilisateur
@@ -51,6 +52,7 @@ export default function VisualisationsProAudio() {
 
     setIsLoading(true);
     setErreurGeneration(false);
+    setErreurMessage('');
     setPhase('session');
 
     try {
@@ -92,6 +94,7 @@ export default function VisualisationsProAudio() {
       }, 1000);
     } catch (error) {
       console.error('Error:', error);
+      setErreurMessage(error instanceof Error ? error.message : '');
       setErreurGeneration(true);
     } finally {
       setIsLoading(false);
@@ -210,8 +213,7 @@ export default function VisualisationsProAudio() {
               Un souci technique
             </h2>
             <p style={{ color: '#666', marginBottom: '1.4rem' }}>
-              La génération de ta visualisation personnalisée n'a pas fonctionné cette fois-ci.
-              Rien n'est perdu — tu peux réessayer, ou revenir plus tard.
+              {erreurMessage || 'La génération de ta visualisation personnalisée n\'a pas fonctionné cette fois-ci. Rien n\'est perdu — tu peux réessayer, ou revenir plus tard.'}
             </p>
             <div style={{ display: 'flex', gap: '0.8rem' }}>
               <button

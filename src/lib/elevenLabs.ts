@@ -23,7 +23,7 @@ const audioCache = new Map<string, AudioCacheEntry>();
  * Convertit un texte en audio professionnelle
  * @param text Texte à convertir
  * @param useCache Utilise le cache si disponible
- * @returns URL audio ou null si erreur
+ * @returns URL audio, ou lève une erreur avec un message explicite
  */
 export async function textToSpeech(
   text: string,
@@ -38,37 +38,35 @@ export async function textToSpeech(
     }
   }
 
-  try {
-    // Appelle notre proxy serveur — la clé Eleven Labs reste secrète côté Vercel
-    const response = await fetch('/api/tts', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ text }),
-    });
+  // Appelle notre proxy serveur — la clé Eleven Labs reste secrète côté Vercel
+  const response = await fetch('/api/tts', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ text }),
+  });
 
-    if (!response.ok) {
-      const err = await response.json().catch(() => ({}));
-      console.error('Eleven Labs proxy error:', response.status, err?.error);
-      return null;
-    }
-
-    const audioBlob = await response.blob();
-    const audioUrl = URL.createObjectURL(audioBlob);
-
-    // Cache l'URL
-    audioCache.set(text, {
-      text,
-      audioUrl,
-      timestamp: Date.now(),
-    });
-
-    return audioUrl;
-  } catch (error) {
-    console.error('Error calling Eleven Labs:', error);
-    return null;
+  if (!response.ok) {
+    const err = await response.json().catch(() => ({}));
+    const message = err?.error || 'Erreur du service de synthèse vocale';
+    console.error('Eleven Labs proxy error:', response.status, message);
+    // On propage le vrai message (ex. quota épuisé) plutôt que de le perdre,
+    // pour que l'écran d'erreur puisse afficher quelque chose d'exploitable.
+    throw new Error(message);
   }
+
+  const audioBlob = await response.blob();
+  const audioUrl = URL.createObjectURL(audioBlob);
+
+  // Cache l'URL
+  audioCache.set(text, {
+    text,
+    audioUrl,
+    timestamp: Date.now(),
+  });
+
+  return audioUrl;
 }
 
 /**

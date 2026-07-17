@@ -19,6 +19,7 @@ export default function EMDRProAudio() {
   const [cycleCount, setCycleCount] = useState(0);
   const [isLoading, setIsLoading] = useState(false);
   const [erreurGeneration, setErreurGeneration] = useState(false);
+  const [erreurMessage, setErreurMessage] = useState('');
   const [audioPlayer, setAudioPlayer] = useState<HTMLAudioElement | null>(null);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
@@ -61,6 +62,7 @@ export default function EMDRProAudio() {
 
     setIsLoading(true);
     setErreurGeneration(false);
+    setErreurMessage('');
     setPhase('intro');
 
     try {
@@ -78,6 +80,7 @@ export default function EMDRProAudio() {
       audio.play().catch(err => console.error('Error playing audio:', err));
     } catch (error) {
       console.error('Error generating EMDR intro:', error);
+      setErreurMessage(error instanceof Error ? error.message : '');
       setErreurGeneration(true);
     } finally {
       setIsLoading(false);
@@ -235,8 +238,7 @@ export default function EMDRProAudio() {
               Un souci technique
             </h2>
             <p style={{ color: '#666', marginBottom: '1.4rem' }}>
-              La génération de ton introduction personnalisée n'a pas fonctionné cette fois-ci.
-              Rien n'est perdu — tu peux réessayer, ou revenir plus tard.
+              {erreurMessage || 'La génération de ton introduction personnalisée n\'a pas fonctionné cette fois-ci. Rien n\'est perdu — tu peux réessayer, ou revenir plus tard.'}
             </p>
             <div style={{ display: 'flex', gap: '0.8rem' }}>
               <button
