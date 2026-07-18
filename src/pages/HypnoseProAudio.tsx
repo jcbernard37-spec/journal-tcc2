@@ -153,22 +153,22 @@ export default function HypnoseProAudio() {
   };
 
   return (
-    <div className="page" style={{ background: '#FAFAF8' }}>
+    <div className="page">
       <div className="conteneur-etroit" style={{ paddingTop: '1.5rem' }}>
-        <button onClick={handleRetour} style={{ background: 'none', border: 'none', color: '#888', cursor: 'pointer', marginBottom: '1.2rem' }}>
+        <button onClick={handleRetour} style={{ background: 'none', border: 'none', color: 'var(--encre-3)', cursor: 'pointer', marginBottom: '1.2rem' }}>
           Retour
         </button>
 
-        <div style={{ background: 'white', borderRadius: '12px', padding: '1.8rem', marginBottom: '1.4rem', border: '1px solid #E8E6E1' }}>
+        <div style={{ background: 'var(--carte-bg)', borderRadius: '12px', padding: '1.8rem', marginBottom: '1.4rem', border: '1px solid var(--carte-border)' }}>
           <h1 style={{ fontSize: '2rem', margin: '0 0 1rem' }}>Hypnose Personnalisée</h1>
-          <p style={{ color: '#888', margin: 0 }}>
+          <p style={{ color: 'var(--encre-3)', margin: 0 }}>
             Induction Ericksonienne créée POUR TOI. Voix professionnelle + Theta beats scientifiques.
           </p>
         </div>
 
         {phase === 'choix' && (
-          <div style={{ background: 'white', borderRadius: '12px', padding: '1.8rem', border: '1px solid #E8E6E1' }}>
-            <h2 style={{ fontSize: '1.4rem', marginBottom: '1.4rem', color: '#222' }}>Choisis ton niveau</h2>
+          <div style={{ background: 'var(--carte-bg)', borderRadius: '12px', padding: '1.8rem', border: '1px solid var(--carte-border)' }}>
+            <h2 style={{ fontSize: '1.4rem', marginBottom: '1.4rem', color: 'var(--encre)' }}>Choisis ton niveau</h2>
             <div style={{
               display: 'grid',
               gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))',
@@ -181,11 +181,11 @@ export default function HypnoseProAudio() {
                   onClick={() => setNiveau(key as Niveau)}
                   style={{
                     padding: '1.2rem',
-                    border: niveau === key ? '2px solid #9D84B7' : '2px solid #E8E6E1',
+                    border: niveau === key ? '2px solid #9D84B7' : '2px solid var(--carte-border)',
                     borderRadius: '8px',
                     cursor: 'pointer',
-                    background: niveau === key ? '#9D84B7' : 'white',
-                    color: niveau === key ? 'white' : '#222',
+                    background: niveau === key ? '#9D84B7' : 'var(--carte-bg)',
+                    color: niveau === key ? 'var(--carte-bg)' : 'var(--encre)',
                     textAlign: 'center',
                     transition: 'all 0.2s',
                   }}
@@ -209,7 +209,7 @@ export default function HypnoseProAudio() {
                 width: '100%',
                 padding: '1.2rem',
                 background: '#9D84B7',
-                color: 'white',
+                color: 'var(--carte-bg)',
                 border: 'none',
                 borderRadius: '8px',
                 fontSize: '1.1rem',
@@ -223,8 +223,8 @@ export default function HypnoseProAudio() {
         )}
 
         {phase === 'setup' && (
-          <div style={{ background: 'white', borderRadius: '12px', padding: '1.8rem', border: '1px solid #E8E6E1' }}>
-            <h2 style={{ fontSize: '1.4rem', marginBottom: '1.4rem', color: '#222' }}>Preparation</h2>
+          <div style={{ background: 'var(--carte-bg)', borderRadius: '12px', padding: '1.8rem', border: '1px solid var(--carte-border)' }}>
+            <h2 style={{ fontSize: '1.4rem', marginBottom: '1.4rem', color: 'var(--encre)' }}>Preparation</h2>
 
             {niveau === 'croyance' && (
               <textarea
@@ -234,7 +234,7 @@ export default function HypnoseProAudio() {
                 style={{
                   width: '100%',
                   padding: '1rem',
-                  border: '1.5px solid #E8E6E1',
+                  border: '1.5px solid var(--carte-border)',
                   borderRadius: '8px',
                   fontFamily: 'inherit',
                   fontSize: '1rem',
@@ -254,7 +254,7 @@ export default function HypnoseProAudio() {
             </div>
 
             <div style={{ display: 'flex', gap: '0.8rem' }}>
-              <button onClick={() => setPhase('choix')} style={{ flex: 1, padding: '1rem', background: '#F0F0ED', border: '1.5px solid #E0DDD8', borderRadius: '8px', cursor: 'pointer', fontWeight: 600 }}>
+              <button onClick={() => setPhase('choix')} style={{ flex: 1, padding: '1rem', background: 'var(--bg-2)', border: '1.5px solid var(--carte-border)', borderRadius: '8px', cursor: 'pointer', fontWeight: 600 }}>
                 Retour
               </button>
               <button
@@ -263,8 +263,8 @@ export default function HypnoseProAudio() {
                 style={{
                   flex: 1,
                   padding: '1rem',
-                  background: isLoading ? '#ccc' : '#9D84B7',
-                  color: 'white',
+                  background: isLoading ? 'var(--carte-border)' : '#9D84B7',
+                  color: 'var(--carte-bg)',
                   border: 'none',
                   borderRadius: '8px',
                   cursor: isLoading ? 'default' : 'pointer',
@@ -278,23 +278,23 @@ export default function HypnoseProAudio() {
         )}
 
         {phase === 'session' && erreurGeneration && (
-          <div style={{ background: 'white', borderRadius: '12px', padding: '1.8rem', border: '1px solid #E8E6E1', textAlign: 'center' }}>
-            <h2 style={{ fontSize: '1.4rem', marginBottom: '1rem', color: '#222' }}>
+          <div style={{ background: 'var(--carte-bg)', borderRadius: '12px', padding: '1.8rem', border: '1px solid var(--carte-border)', textAlign: 'center' }}>
+            <h2 style={{ fontSize: '1.4rem', marginBottom: '1rem', color: 'var(--encre)' }}>
               Un souci technique
             </h2>
-            <p style={{ color: '#666', marginBottom: '1.4rem' }}>
+            <p style={{ color: 'var(--encre-2)', marginBottom: '1.4rem' }}>
               {erreurMessage || 'La génération de ton induction personnalisée n\'a pas fonctionné cette fois-ci. Rien n\'est perdu — tu peux réessayer, ou revenir plus tard.'}
             </p>
             <div style={{ display: 'flex', gap: '0.8rem' }}>
               <button
                 onClick={() => setPhase('setup')}
-                style={{ flex: 1, padding: '1rem', background: '#F0F0ED', border: '1.5px solid #E0DDD8', borderRadius: '8px', cursor: 'pointer', fontWeight: 600 }}
+                style={{ flex: 1, padding: '1rem', background: 'var(--bg-2)', border: '1.5px solid var(--carte-border)', borderRadius: '8px', cursor: 'pointer', fontWeight: 600 }}
               >
                 Retour
               </button>
               <button
                 onClick={handleDemarrerSession}
-                style={{ flex: 1, padding: '1rem', background: '#9D84B7', color: 'white', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: 600 }}
+                style={{ flex: 1, padding: '1rem', background: '#9D84B7', color: 'var(--carte-bg)', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: 600 }}
               >
                 Réessayer
               </button>
@@ -303,8 +303,8 @@ export default function HypnoseProAudio() {
         )}
 
         {phase === 'session' && !erreurGeneration && (
-          <div style={{ background: 'white', borderRadius: '12px', padding: '1.8rem', border: '1px solid #E8E6E1', textAlign: 'center' }}>
-            <h2 style={{ fontSize: '1.4rem', marginBottom: '1rem', color: '#222' }}>
+          <div style={{ background: 'var(--carte-bg)', borderRadius: '12px', padding: '1.8rem', border: '1px solid var(--carte-border)', textAlign: 'center' }}>
+            <h2 style={{ fontSize: '1.4rem', marginBottom: '1rem', color: 'var(--encre)' }}>
               {isLoading ? 'Préparation de ton induction...' : 'Induction hypnotique...'}
             </h2>
             
@@ -320,7 +320,7 @@ export default function HypnoseProAudio() {
             />
 
             {isLoading ? (
-              <p style={{ color: '#666', marginBottom: '1.4rem' }}>
+              <p style={{ color: 'var(--encre-2)', marginBottom: '1.4rem' }}>
                 Ta voix personnalisée et les Theta beats se préparent, quelques instants...
               </p>
             ) : (
@@ -341,7 +341,7 @@ export default function HypnoseProAudio() {
                   </div>
                 )}
 
-                <p style={{ color: '#666', marginBottom: '1.4rem' }}>
+                <p style={{ color: 'var(--encre-2)', marginBottom: '1.4rem' }}>
                   Ferme tes yeux. Laisse-toi guider dans l induction.
                 </p>
               </>
@@ -354,9 +354,9 @@ export default function HypnoseProAudio() {
                 style={{
                   flex: 1,
                   padding: '1rem',
-                  background: enPause ? '#9D84B7' : '#F0F0ED',
-                  color: enPause ? 'white' : '#222',
-                  border: '1.5px solid #E0DDD8',
+                  background: enPause ? '#9D84B7' : 'var(--bg-2)',
+                  color: enPause ? 'var(--carte-bg)' : 'var(--encre)',
+                  border: '1.5px solid var(--carte-border)',
                   borderRadius: '8px',
                   cursor: isLoading ? 'default' : 'pointer',
                   opacity: isLoading ? 0.5 : 1,
@@ -371,8 +371,8 @@ export default function HypnoseProAudio() {
                 style={{
                   flex: 1,
                   padding: '1rem',
-                  background: '#F0F0ED',
-                  border: '1.5px solid #E0DDD8',
+                  background: 'var(--bg-2)',
+                  border: '1.5px solid var(--carte-border)',
                   borderRadius: '8px',
                   cursor: isLoading ? 'default' : 'pointer',
                   opacity: isLoading ? 0.5 : 1,
@@ -386,11 +386,11 @@ export default function HypnoseProAudio() {
         )}
 
         {phase === 'apres' && (
-          <div style={{ background: 'white', borderRadius: '12px', padding: '1.8rem', border: '1px solid #E8E6E1' }}>
-            <h2 style={{ fontSize: '1.4rem', marginBottom: '1.4rem', color: '#222' }}>Apres la session</h2>
+          <div style={{ background: 'var(--carte-bg)', borderRadius: '12px', padding: '1.8rem', border: '1px solid var(--carte-border)' }}>
+            <h2 style={{ fontSize: '1.4rem', marginBottom: '1.4rem', color: 'var(--encre)' }}>Apres la session</h2>
 
             <div style={{ marginBottom: '1.4rem' }}>
-              <label style={{ display: 'block', fontWeight: 600, marginBottom: '0.6rem', color: '#222' }}>
+              <label style={{ display: 'block', fontWeight: 600, marginBottom: '0.6rem', color: 'var(--encre)' }}>
                 Comment tu te sens ? (0-10)
               </label>
               <input type="range" min="0" max="10" value={apresScore} onChange={(e) => setApresScore(Number(e.target.value))} style={{ width: '100%' }} />
@@ -405,7 +405,7 @@ export default function HypnoseProAudio() {
                 width: '100%',
                 padding: '1.2rem',
                 background: '#9D84B7',
-                color: 'white',
+                color: 'var(--carte-bg)',
                 border: 'none',
                 borderRadius: '8px',
                 cursor: 'pointer',

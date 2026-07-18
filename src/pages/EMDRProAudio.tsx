@@ -144,26 +144,26 @@ export default function EMDRProAudio() {
   };
 
   return (
-    <div className="page" style={{ background: '#FAFAF8' }}>
+    <div className="page">
       <div className="conteneur-etroit" style={{ paddingTop: '1.5rem' }}>
-        <button onClick={handleRetour} style={{ background: 'none', border: 'none', color: '#888', cursor: 'pointer', marginBottom: '1.2rem' }}>
+        <button onClick={handleRetour} style={{ background: 'none', border: 'none', color: 'var(--encre-3)', cursor: 'pointer', marginBottom: '1.2rem' }}>
           Retour
         </button>
 
-        <div style={{ background: 'white', borderRadius: '12px', padding: '1.8rem', marginBottom: '1.4rem', border: '1px solid #E8E6E1' }}>
+        <div style={{ background: 'var(--carte-bg)', borderRadius: '12px', padding: '1.8rem', marginBottom: '1.4rem', border: '1px solid var(--carte-border)' }}>
           <h1 style={{ fontSize: '2rem', margin: '0 0 1rem' }}>EMDR Bilatéral Guidé</h1>
-          <p style={{ color: '#888', margin: 0 }}>
+          <p style={{ color: 'var(--encre-3)', margin: 0 }}>
             Traitement bilatéral + guidage voix + binaural beats 1Hz.
           </p>
         </div>
 
         {phase === 'info' && (
-          <div style={{ background: 'white', borderRadius: '12px', padding: '1.8rem', border: '1px solid #E8E6E1' }}>
-            <h2 style={{ fontSize: '1.4rem', marginBottom: '1rem', color: '#222' }}>Info EMDR</h2>
-            <p style={{ color: '#666', marginBottom: '1rem' }}>
+          <div style={{ background: 'var(--carte-bg)', borderRadius: '12px', padding: '1.8rem', border: '1px solid var(--carte-border)' }}>
+            <h2 style={{ fontSize: '1.4rem', marginBottom: '1rem', color: 'var(--encre)' }}>Info EMDR</h2>
+            <p style={{ color: 'var(--encre-2)', marginBottom: '1rem' }}>
               L'EMDR (Eye Movement Desensitization and Reprocessing) est une thérapie scientifiquement validée pour traiter les traumatismes et les peurs.
             </p>
-            <p style={{ color: '#666', marginBottom: '1rem' }}>
+            <p style={{ color: 'var(--encre-2)', marginBottom: '1rem' }}>
               Cette version PRO inclut:
               <br />• Stimulation bilatérale synchrone (left/right)
               <br />• Guidage professionnel
@@ -176,7 +176,7 @@ export default function EMDRProAudio() {
                 width: '100%',
                 padding: '1.2rem',
                 background: '#FF6B6B',
-                color: 'white',
+                color: 'var(--carte-bg)',
                 border: 'none',
                 borderRadius: '8px',
                 cursor: 'pointer',
@@ -189,9 +189,9 @@ export default function EMDRProAudio() {
         )}
 
         {phase === 'suds' && (
-          <div style={{ background: 'white', borderRadius: '12px', padding: '1.8rem', border: '1px solid #E8E6E1' }}>
-            <h2 style={{ fontSize: '1.4rem', marginBottom: '1.4rem', color: '#222' }}>Échelle SUDS</h2>
-            <p style={{ color: '#666', marginBottom: '1rem' }}>
+          <div style={{ background: 'var(--carte-bg)', borderRadius: '12px', padding: '1.8rem', border: '1px solid var(--carte-border)' }}>
+            <h2 style={{ fontSize: '1.4rem', marginBottom: '1.4rem', color: 'var(--encre)' }}>Échelle SUDS</h2>
+            <p style={{ color: 'var(--encre-2)', marginBottom: '1rem' }}>
               Avant le traitement, évalue ta détresse (0 = pas du tout, 10 = maximum):
             </p>
             <input
@@ -207,7 +207,7 @@ export default function EMDRProAudio() {
             </div>
 
             <div style={{ marginBottom: '1.4rem' }}>
-              <label style={{ display: 'block', fontWeight: 600, marginBottom: '0.6rem', color: '#222' }}>
+              <label style={{ display: 'block', fontWeight: 600, marginBottom: '0.6rem', color: 'var(--encre)' }}>
                 Quelle ressource t'aidera? (personne, endroit, force)
               </label>
               <input
@@ -218,7 +218,7 @@ export default function EMDRProAudio() {
                 style={{
                   width: '100%',
                   padding: '0.8rem',
-                  border: '1.5px solid #E8E6E1',
+                  border: '1.5px solid var(--carte-border)',
                   borderRadius: '8px',
                   fontSize: '1rem',
                   marginBottom: '1.4rem',
@@ -227,7 +227,7 @@ export default function EMDRProAudio() {
             </div>
 
             <div style={{ display: 'flex', gap: '0.8rem' }}>
-              <button onClick={() => setPhase('info')} style={{ flex: 1, padding: '1rem', background: '#F0F0ED', border: '1.5px solid #E0DDD8', borderRadius: '8px', cursor: 'pointer', fontWeight: 600 }}>
+              <button onClick={() => setPhase('info')} style={{ flex: 1, padding: '1rem', background: 'var(--bg-2)', border: '1.5px solid var(--carte-border)', borderRadius: '8px', cursor: 'pointer', fontWeight: 600 }}>
                 Retour
               </button>
               <button
@@ -236,8 +236,8 @@ export default function EMDRProAudio() {
                 style={{
                   flex: 1,
                   padding: '1rem',
-                  background: sudsAvant === 0 ? '#ccc' : '#FF6B6B',
-                  color: 'white',
+                  background: sudsAvant === 0 ? 'var(--carte-border)' : '#FF6B6B',
+                  color: 'var(--carte-bg)',
                   border: 'none',
                   borderRadius: '8px',
                   cursor: sudsAvant === 0 ? 'default' : 'pointer',
@@ -251,23 +251,23 @@ export default function EMDRProAudio() {
         )}
 
         {phase === 'intro' && erreurGeneration && (
-          <div style={{ background: 'white', borderRadius: '12px', padding: '1.8rem', border: '1px solid #E8E6E1', textAlign: 'center' }}>
-            <h2 style={{ fontSize: '1.4rem', marginBottom: '1rem', color: '#222' }}>
+          <div style={{ background: 'var(--carte-bg)', borderRadius: '12px', padding: '1.8rem', border: '1px solid var(--carte-border)', textAlign: 'center' }}>
+            <h2 style={{ fontSize: '1.4rem', marginBottom: '1rem', color: 'var(--encre)' }}>
               Un souci technique
             </h2>
-            <p style={{ color: '#666', marginBottom: '1.4rem' }}>
+            <p style={{ color: 'var(--encre-2)', marginBottom: '1.4rem' }}>
               {erreurMessage || 'La génération de ton introduction personnalisée n\'a pas fonctionné cette fois-ci. Rien n\'est perdu — tu peux réessayer, ou revenir plus tard.'}
             </p>
             <div style={{ display: 'flex', gap: '0.8rem' }}>
               <button
                 onClick={() => setPhase('suds')}
-                style={{ flex: 1, padding: '1rem', background: '#F0F0ED', border: '1.5px solid #E0DDD8', borderRadius: '8px', cursor: 'pointer', fontWeight: 600 }}
+                style={{ flex: 1, padding: '1rem', background: 'var(--bg-2)', border: '1.5px solid var(--carte-border)', borderRadius: '8px', cursor: 'pointer', fontWeight: 600 }}
               >
                 Retour
               </button>
               <button
                 onClick={handleLancerIntro}
-                style={{ flex: 1, padding: '1rem', background: '#FF6B6B', color: 'white', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: 600 }}
+                style={{ flex: 1, padding: '1rem', background: '#FF6B6B', color: 'var(--carte-bg)', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: 600 }}
               >
                 Réessayer
               </button>
@@ -276,8 +276,8 @@ export default function EMDRProAudio() {
         )}
 
         {phase === 'intro' && !erreurGeneration && (
-          <div style={{ background: 'white', borderRadius: '12px', padding: '1.8rem', border: '1px solid #E8E6E1', textAlign: 'center' }}>
-            <h2 style={{ fontSize: '1.4rem', marginBottom: '1rem', color: '#222' }}>
+          <div style={{ background: 'var(--carte-bg)', borderRadius: '12px', padding: '1.8rem', border: '1px solid var(--carte-border)', textAlign: 'center' }}>
+            <h2 style={{ fontSize: '1.4rem', marginBottom: '1rem', color: 'var(--encre)' }}>
               {isLoading ? 'Préparation de ton introduction...' : 'Introduction guidée'}
             </h2>
 
@@ -293,11 +293,11 @@ export default function EMDRProAudio() {
             />
 
             {isLoading ? (
-              <p style={{ color: '#666', marginBottom: '1.4rem' }}>
+              <p style={{ color: 'var(--encre-2)', marginBottom: '1.4rem' }}>
                 Ta voix personnalisée se prépare, quelques instants...
               </p>
             ) : (
-              <p style={{ color: '#666', marginBottom: '1.4rem' }}>
+              <p style={{ color: 'var(--encre-2)', marginBottom: '1.4rem' }}>
                 🎙️ Écoute l'introduction jusqu'au bout, puis lance la stimulation
                 bilatérale silencieuse quand tu te sens prête.
               </p>
@@ -309,8 +309,8 @@ export default function EMDRProAudio() {
               style={{
                 width: '100%',
                 padding: '1.2rem',
-                background: isLoading ? '#ccc' : '#FF6B6B',
-                color: 'white',
+                background: isLoading ? 'var(--carte-border)' : '#FF6B6B',
+                color: 'var(--carte-bg)',
                 border: 'none',
                 borderRadius: '8px',
                 cursor: isLoading ? 'default' : 'pointer',
@@ -324,8 +324,8 @@ export default function EMDRProAudio() {
         )}
 
         {phase === 'processing' && (
-          <div style={{ background: 'white', borderRadius: '12px', padding: '1.8rem', border: '1px solid #E8E6E1', textAlign: 'center' }}>
-            <h2 style={{ fontSize: '1.4rem', marginBottom: '2rem', color: '#222' }}>
+          <div style={{ background: 'var(--carte-bg)', borderRadius: '12px', padding: '1.8rem', border: '1px solid var(--carte-border)', textAlign: 'center' }}>
+            <h2 style={{ fontSize: '1.4rem', marginBottom: '2rem', color: 'var(--encre)' }}>
               Traitement EMDR en cours
             </h2>
 
@@ -364,13 +364,13 @@ export default function EMDRProAudio() {
               {Math.floor(duree / 60)}:{String(duree % 60).padStart(2, '0')}
             </div>
 
-            <div style={{ fontSize: '0.95rem', color: '#666', marginBottom: '1.4rem' }}>
+            <div style={{ fontSize: '0.95rem', color: 'var(--encre-2)', marginBottom: '1.4rem' }}>
               Cycles: {cycleCount}<br />
               Binaural beats 1Hz actifs<br />
               Stimulation bilatérale synchrone
             </div>
 
-            <p style={{ color: '#666', marginBottom: '1.4rem', fontSize: '0.9rem' }}>
+            <p style={{ color: 'var(--encre-2)', marginBottom: '1.4rem', fontSize: '0.9rem' }}>
               Pense à {ressource || 'ta ressource'} si tu le souhaites.
             </p>
 
@@ -380,9 +380,9 @@ export default function EMDRProAudio() {
                 style={{
                   flex: 1,
                   padding: '1rem',
-                  background: enPause ? '#FF6B6B' : '#F0F0ED',
-                  color: enPause ? 'white' : '#222',
-                  border: '1.5px solid #E0DDD8',
+                  background: enPause ? '#FF6B6B' : 'var(--bg-2)',
+                  color: enPause ? 'var(--carte-bg)' : 'var(--encre)',
+                  border: '1.5px solid var(--carte-border)',
                   borderRadius: '8px',
                   cursor: 'pointer',
                   fontWeight: 600,
@@ -395,8 +395,8 @@ export default function EMDRProAudio() {
                 style={{
                   flex: 1,
                   padding: '1rem',
-                  background: '#F0F0ED',
-                  border: '1.5px solid #E0DDD8',
+                  background: 'var(--bg-2)',
+                  border: '1.5px solid var(--carte-border)',
                   borderRadius: '8px',
                   cursor: 'pointer',
                   fontWeight: 600,
@@ -409,11 +409,11 @@ export default function EMDRProAudio() {
         )}
 
         {phase === 'post' && (
-          <div style={{ background: 'white', borderRadius: '12px', padding: '1.8rem', border: '1px solid #E8E6E1' }}>
-            <h2 style={{ fontSize: '1.4rem', marginBottom: '1.4rem', color: '#222' }}>Après le traitement</h2>
+          <div style={{ background: 'var(--carte-bg)', borderRadius: '12px', padding: '1.8rem', border: '1px solid var(--carte-border)' }}>
+            <h2 style={{ fontSize: '1.4rem', marginBottom: '1.4rem', color: 'var(--encre)' }}>Après le traitement</h2>
 
             <div style={{ marginBottom: '1.4rem' }}>
-              <label style={{ display: 'block', fontWeight: 600, marginBottom: '0.6rem', color: '#222' }}>
+              <label style={{ display: 'block', fontWeight: 600, marginBottom: '0.6rem', color: 'var(--encre)' }}>
                 Évalue ta détresse maintenant (0-10):
               </label>
               <input
@@ -448,7 +448,7 @@ export default function EMDRProAudio() {
                 width: '100%',
                 padding: '1.2rem',
                 background: '#FF6B6B',
-                color: 'white',
+                color: 'var(--carte-bg)',
                 border: 'none',
                 borderRadius: '8px',
                 cursor: 'pointer',
