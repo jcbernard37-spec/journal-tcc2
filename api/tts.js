@@ -20,12 +20,8 @@
 // 3 sur Starter, 5 sur Creator, 10 sur Pro...).
 // ═══════════════════════════════════════════════════════
 
-// Voix par défaut : Rachel (voix anglaise, d'où l'accent en français).
-// 👉 Pour une voix nativement française, remplace cet ID par celui d'une
-// voix trouvée sur elevenlabs.io/app/voice-library (filtrer par langue
-// "French"), copiable via le bouton "..." → "Copy Voice ID" sur la voix
-// choisie, ou via l'onglet "Voix" du compte.
-const VOICE_ID = 'EXAVITQu4vr4xnSDxMaL'; // Rachel - Natural, warm, calm
+// Voix française choisie par l'utilisateur depuis elevenlabs.io/app/voice-library
+const VOICE_ID = '5opxviIE64D8KxYYJKpx';
 
 // 4500 caractères : reste sous la limite ~5000 des plans payants (Starter
 // et au-dessus), avec une marge de sécurité. Sur le plan Free (2500), ça
