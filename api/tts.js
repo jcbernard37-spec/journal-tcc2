@@ -4,35 +4,26 @@
 // envoyée au navigateur). Le front-end n'appelle QUE cette
 // route, jamais api.elevenlabs.io directement.
 //
-// Eleven Labs limite chaque REQUÊTE à un nombre de caractères
-// (2500 sur Free, plus sur les plans payants). Nos scripts de
+// Eleven Labs limite chaque REQUÊTE à 2500 caractères sur le
+// plan Free (5000 sur les plans payants). Nos scripts de
 // méditation/hypnose peuvent largement dépasser ça (jusqu'à
 // plusieurs milliers de caractères pour une session de 60 min).
-// On découpe donc le texte en morceaux sous la limite.
-//
-// ⚠️ Ces morceaux sont générés EN PARALLÈLE (par lots), pas les
-// uns après les autres — un compte Free traité en série peut
-// largement dépasser les 60 secondes autorisées par la fonction
-// serveur pour une session longue (plusieurs dizaines de
-// morceaux × plusieurs secondes chacun = dépassement du délai).
-// La limite de parallélisme reste sous le nombre de requêtes
-// simultanées autorisées par le plan Eleven Labs (2 sur Free,
-// 3 sur Starter, 5 sur Creator, 10 sur Pro...).
+// On découpe donc le texte en morceaux sous la limite, on
+// génère l'audio de chaque morceau séparément, puis on les
+// recolle en un seul fichier avant de le renvoyer.
 // ═══════════════════════════════════════════════════════
 
-// Voix française choisie par l'utilisateur depuis elevenlabs.io/app/voice-library
-const VOICE_ID = '5opxviIE64D8KxYYJKpx';
+// Voix par défaut : Rachel (voix anglaise, d'où l'accent en français).
+// 👉 Pour une voix nativement française, remplace cet ID par celui d'une
+// voix trouvée sur elevenlabs.io/app/voice-library (filtrer par langue
+// "French"), copiable via le bouton "..." → "Copy Voice ID" sur la voix
+// choisie, ou via l'onglet "Voix" du compte.
+const VOICE_ID = 'EXAVITQu4vr4xnSDxMaL'; // Rachel - Natural, warm, calm
 
-// 4500 caractères : reste sous la limite ~5000 des plans payants (Starter
-// et au-dessus), avec une marge de sécurité. Sur le plan Free (2500), ça
-// coupera automatiquement en morceaux plus petits côté Eleven Labs de
-// toute façon — mais l'app est prévue pour un plan payant vu le volume.
-const MAX_CHARS_PAR_REQUETE = 4500;
-
-// Nombre de segments envoyés en même temps. Reste prudemment sous la
-// limite de requêtes simultanées la plus basse des plans payants (3 sur
-// Starter) pour éviter les erreurs 429 "too_many_concurrent_requests".
-const CONCURRENCE_MAX = 3;
+// Reste sous la limite de 2500 caractères du plan Free, avec une bonne
+// marge de sécurité (certains caractères spéciaux/accents comptent parfois
+// double selon l'encodage facturé).
+const MAX_CHARS_PAR_REQUETE = 2200;
 
 /**
  * Découpe un texte en morceaux sous la limite, en coupant proprement à la
@@ -105,30 +96,6 @@ async function genererSegmentAudio(texte, apiKey) {
   return Buffer.from(arrayBuffer);
 }
 
-/**
- * Génère l'audio de plusieurs segments EN PARALLÈLE, par lots limités,
- * en conservant l'ordre d'origine des segments dans le résultat.
- */
-async function genererSegmentsEnParallele(segments, apiKey, concurrenceMax) {
-  const resultats = new Array(segments.length);
-  let indexSuivant = 0;
-
-  async function travailleur() {
-    while (indexSuivant < segments.length) {
-      const i = indexSuivant++;
-      resultats[i] = await genererSegmentAudio(segments[i], apiKey);
-    }
-  }
-
-  const travailleurs = Array.from(
-    { length: Math.min(concurrenceMax, segments.length) },
-    () => travailleur()
-  );
-  await Promise.all(travailleurs);
-
-  return resultats;
-}
-
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Méthode non autorisée' });
@@ -154,7 +121,12 @@ export default async function handler(req, res) {
   const segments = decouperTexte(text, MAX_CHARS_PAR_REQUETE);
 
   try {
-    const buffers = await genererSegmentsEnParallele(segments, apiKey, CONCURRENCE_MAX);
+    const buffers = [];
+    for (const segment of segments) {
+      const buffer = await genererSegmentAudio(segment, apiKey);
+      buffers.push(buffer);
+    }
+
     const audioComplet = Buffer.concat(buffers);
 
     res.setHeader('Content-Type', 'audio/mpeg');
@@ -167,12 +139,7 @@ export default async function handler(req, res) {
     const detail = (error.detail || '').toLowerCase();
     if (error.status === 401 || detail.includes('quota') || detail.includes('credit')) {
       return res.status(402).json({
-        error: 'Le quota Eleven Labs du mois est probablement épuisé. Vérifie sur elevenlabs.io/app/subscription.',
-      });
-    }
-    if (error.status === 429 || detail.includes('too_many_concurrent') || detail.includes('system_busy')) {
-      return res.status(429).json({
-        error: 'Trop de requêtes envoyées à Eleven Labs en même temps. Réessaie dans quelques secondes.',
+        error: 'Le quota Eleven Labs du mois est probablement épuisé (plan Free = 10 000 caractères/mois). Vérifie sur elevenlabs.io/app/subscription.',
       });
     }
 

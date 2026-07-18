@@ -167,23 +167,23 @@ export default function YogaNidraProAudio() {
   };
 
   return (
-    <div className="page">
+    <div className="page" style={{ background: '#FAFAF8' }}>
       <div className="conteneur-etroit" style={{ paddingTop: '1.5rem' }}>
-        <button onClick={handleRetour} style={{ background: 'none', border: 'none', color: 'var(--encre-3)', cursor: 'pointer', marginBottom: '1.2rem' }}>
+        <button onClick={handleRetour} style={{ background: 'none', border: 'none', color: '#888', cursor: 'pointer', marginBottom: '1.2rem' }}>
           Retour
         </button>
 
-        <div style={{ background: 'var(--carte-bg)', borderRadius: '12px', padding: '1.8rem', marginBottom: '1.4rem', border: '1px solid var(--carte-border)' }}>
+        <div style={{ background: 'white', borderRadius: '12px', padding: '1.8rem', marginBottom: '1.4rem', border: '1px solid #E8E6E1' }}>
           <h1 style={{ fontSize: '2rem', margin: '0 0 1rem' }}>Yoga Nidra Personnalisée</h1>
-          <p style={{ color: 'var(--encre-3)', margin: 0 }}>
+          <p style={{ color: '#888', margin: 0 }}>
             Session créée spécialement POUR TOI basée sur ton histoire et tes ressources.
             Voix professionnelle + Binaural Beats scientifiques inclus.
           </p>
         </div>
 
         {phase === 'choix' && (
-          <div style={{ background: 'var(--carte-bg)', borderRadius: '12px', padding: '1.8rem', border: '1px solid var(--carte-border)' }}>
-            <h2 style={{ fontSize: '1.4rem', marginBottom: '1.4rem', color: 'var(--encre)' }}>Choisis ta durée</h2>
+          <div style={{ background: 'white', borderRadius: '12px', padding: '1.8rem', border: '1px solid #E8E6E1' }}>
+            <h2 style={{ fontSize: '1.4rem', marginBottom: '1.4rem', color: '#222' }}>Choisis ta durée</h2>
             <div style={{
               display: 'grid',
               gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))',
@@ -196,11 +196,11 @@ export default function YogaNidraProAudio() {
                   onClick={() => setDuree(key as Duree)}
                   style={{
                     padding: '1.2rem',
-                    border: duree === key ? '2px solid #4ECDC4' : '2px solid var(--carte-border)',
+                    border: duree === key ? '2px solid #4ECDC4' : '2px solid #E8E6E1',
                     borderRadius: '8px',
                     cursor: 'pointer',
-                    background: duree === key ? '#4ECDC4' : 'var(--carte-bg)',
-                    color: duree === key ? 'var(--carte-bg)' : 'var(--encre)',
+                    background: duree === key ? '#4ECDC4' : 'white',
+                    color: duree === key ? 'white' : '#222',
                     textAlign: 'center',
                     transition: 'all 0.2s',
                   }}
@@ -221,7 +221,7 @@ export default function YogaNidraProAudio() {
                 width: '100%',
                 padding: '1.2rem',
                 background: '#4ECDC4',
-                color: 'var(--carte-bg)',
+                color: 'white',
                 border: 'none',
                 borderRadius: '8px',
                 fontSize: '1.1rem',
@@ -235,11 +235,11 @@ export default function YogaNidraProAudio() {
         )}
 
         {phase === 'avant' && (
-          <div style={{ background: 'var(--carte-bg)', borderRadius: '12px', padding: '1.8rem', border: '1px solid var(--carte-border)' }}>
-            <h2 style={{ fontSize: '1.4rem', marginBottom: '1.4rem', color: 'var(--encre)' }}>Avant la session</h2>
+          <div style={{ background: 'white', borderRadius: '12px', padding: '1.8rem', border: '1px solid #E8E6E1' }}>
+            <h2 style={{ fontSize: '1.4rem', marginBottom: '1.4rem', color: '#222' }}>Avant la session</h2>
 
             <div style={{ marginBottom: '1.4rem' }}>
-              <label style={{ display: 'block', fontWeight: 600, marginBottom: '0.6rem', color: 'var(--encre)' }}>
+              <label style={{ display: 'block', fontWeight: 600, marginBottom: '0.6rem', color: '#222' }}>
                 Comment tu te sens ? (0-10)
               </label>
               <input type="range" min="0" max="10" value={avantScore} onChange={(e) => setAvantScore(Number(e.target.value))} style={{ width: '100%' }} />
@@ -257,7 +257,7 @@ export default function YogaNidraProAudio() {
             </div>
 
             <div style={{ display: 'flex', gap: '0.8rem' }}>
-              <button onClick={() => setPhase('choix')} style={{ flex: 1, padding: '1rem', background: 'var(--bg-2)', border: '1.5px solid var(--carte-border)', borderRadius: '8px', cursor: 'pointer', fontWeight: 600 }}>
+              <button onClick={() => setPhase('choix')} style={{ flex: 1, padding: '1rem', background: '#F0F0ED', border: '1.5px solid #E0DDD8', borderRadius: '8px', cursor: 'pointer', fontWeight: 600 }}>
                 Retour
               </button>
               <button
@@ -266,8 +266,8 @@ export default function YogaNidraProAudio() {
                 style={{
                   flex: 1,
                   padding: '1rem',
-                  background: isLoading ? 'var(--carte-border)' : '#4ECDC4',
-                  color: 'var(--carte-bg)',
+                  background: isLoading ? '#ccc' : '#4ECDC4',
+                  color: 'white',
                   border: 'none',
                   borderRadius: '8px',
                   cursor: isLoading ? 'default' : 'pointer',
@@ -281,23 +281,23 @@ export default function YogaNidraProAudio() {
         )}
 
         {phase === 'session' && erreurGeneration && (
-          <div style={{ background: 'var(--carte-bg)', borderRadius: '12px', padding: '1.8rem', border: '1px solid var(--carte-border)', textAlign: 'center' }}>
-            <h2 style={{ fontSize: '1.4rem', marginBottom: '1rem', color: 'var(--encre)' }}>
+          <div style={{ background: 'white', borderRadius: '12px', padding: '1.8rem', border: '1px solid #E8E6E1', textAlign: 'center' }}>
+            <h2 style={{ fontSize: '1.4rem', marginBottom: '1rem', color: '#222' }}>
               Un souci technique
             </h2>
-            <p style={{ color: 'var(--encre-2)', marginBottom: '1.4rem' }}>
+            <p style={{ color: '#666', marginBottom: '1.4rem' }}>
               {erreurMessage || 'La génération de ta session personnalisée n\'a pas fonctionné cette fois-ci. Rien n\'est perdu — tu peux réessayer, ou revenir plus tard.'}
             </p>
             <div style={{ display: 'flex', gap: '0.8rem' }}>
               <button
                 onClick={() => setPhase('avant')}
-                style={{ flex: 1, padding: '1rem', background: 'var(--bg-2)', border: '1.5px solid var(--carte-border)', borderRadius: '8px', cursor: 'pointer', fontWeight: 600 }}
+                style={{ flex: 1, padding: '1rem', background: '#F0F0ED', border: '1.5px solid #E0DDD8', borderRadius: '8px', cursor: 'pointer', fontWeight: 600 }}
               >
                 Retour
               </button>
               <button
                 onClick={handleDemarrerSession}
-                style={{ flex: 1, padding: '1rem', background: '#4ECDC4', color: 'var(--carte-bg)', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: 600 }}
+                style={{ flex: 1, padding: '1rem', background: '#4ECDC4', color: 'white', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: 600 }}
               >
                 Réessayer
               </button>
@@ -306,8 +306,8 @@ export default function YogaNidraProAudio() {
         )}
 
         {phase === 'session' && !erreurGeneration && (
-          <div style={{ background: 'var(--carte-bg)', borderRadius: '12px', padding: '1.8rem', border: '1px solid var(--carte-border)', textAlign: 'center' }}>
-            <h2 style={{ fontSize: '1.4rem', marginBottom: '1rem', color: 'var(--encre)' }}>
+          <div style={{ background: 'white', borderRadius: '12px', padding: '1.8rem', border: '1px solid #E8E6E1', textAlign: 'center' }}>
+            <h2 style={{ fontSize: '1.4rem', marginBottom: '1rem', color: '#222' }}>
               {isLoading ? 'Préparation de ta session...' : 'Session en cours...'}
             </h2>
             
@@ -323,7 +323,7 @@ export default function YogaNidraProAudio() {
             />
 
             {isLoading ? (
-              <p style={{ color: 'var(--encre-2)', marginBottom: '1.4rem' }}>
+              <p style={{ color: '#666', marginBottom: '1.4rem' }}>
                 Ta voix personnalisée et les binaural beats se préparent, quelques instants...
               </p>
             ) : (
@@ -344,7 +344,7 @@ export default function YogaNidraProAudio() {
                   </div>
                 )}
 
-                <p style={{ color: 'var(--encre-2)', marginBottom: '1.4rem' }}>
+                <p style={{ color: '#666', marginBottom: '1.4rem' }}>
                   Relaxe-toi complètement. Laisse-toi porter par la guidance.
                 </p>
               </>
@@ -357,9 +357,9 @@ export default function YogaNidraProAudio() {
                 style={{
                   flex: 1,
                   padding: '1rem',
-                  background: enPause ? '#4ECDC4' : 'var(--bg-2)',
-                  color: enPause ? 'var(--carte-bg)' : 'var(--encre)',
-                  border: '1.5px solid var(--carte-border)',
+                  background: enPause ? '#4ECDC4' : '#F0F0ED',
+                  color: enPause ? 'white' : '#222',
+                  border: '1.5px solid #E0DDD8',
                   borderRadius: '8px',
                   cursor: isLoading ? 'default' : 'pointer',
                   opacity: isLoading ? 0.5 : 1,
@@ -374,8 +374,8 @@ export default function YogaNidraProAudio() {
                 style={{
                   flex: 1,
                   padding: '1rem',
-                  background: 'var(--bg-2)',
-                  border: '1.5px solid var(--carte-border)',
+                  background: '#F0F0ED',
+                  border: '1.5px solid #E0DDD8',
                   borderRadius: '8px',
                   cursor: isLoading ? 'default' : 'pointer',
                   opacity: isLoading ? 0.5 : 1,
@@ -389,11 +389,11 @@ export default function YogaNidraProAudio() {
         )}
 
         {phase === 'apres' && (
-          <div style={{ background: 'var(--carte-bg)', borderRadius: '12px', padding: '1.8rem', border: '1px solid var(--carte-border)' }}>
-            <h2 style={{ fontSize: '1.4rem', marginBottom: '1.4rem', color: 'var(--encre)' }}>Apres la session</h2>
+          <div style={{ background: 'white', borderRadius: '12px', padding: '1.8rem', border: '1px solid #E8E6E1' }}>
+            <h2 style={{ fontSize: '1.4rem', marginBottom: '1.4rem', color: '#222' }}>Apres la session</h2>
 
             <div style={{ marginBottom: '1.4rem' }}>
-              <label style={{ display: 'block', fontWeight: 600, marginBottom: '0.6rem', color: 'var(--encre)' }}>
+              <label style={{ display: 'block', fontWeight: 600, marginBottom: '0.6rem', color: '#222' }}>
                 Comment tu te sens maintenant ? (0-10)
               </label>
               <input type="range" min="0" max="10" value={apresScore} onChange={(e) => setApresScore(Number(e.target.value))} style={{ width: '100%' }} />
@@ -421,7 +421,7 @@ export default function YogaNidraProAudio() {
                 width: '100%',
                 padding: '1.2rem',
                 background: '#4ECDC4',
-                color: 'var(--carte-bg)',
+                color: 'white',
                 border: 'none',
                 borderRadius: '8px',
                 cursor: 'pointer',
