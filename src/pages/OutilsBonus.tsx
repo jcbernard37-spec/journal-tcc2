@@ -1,70 +1,130 @@
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { jouerScriptGuidé, arreter, mettreEnPause, reprendre } from '../lib/voiceGuide';
-import { genererSession } from '../lib/sessionIA';
-import { TAPPING_EFT, COHERENCE_CARDIAQUE, MEDITATION_BIENVEILLANCE, AFFIRMATIONS_GUIDEES } from '../data/scriptsTherapeutiques';
+import {
+  loadUserProfile,
+  generatePersonalizedTapping,
+  generatePersonalizedCoherence,
+  generatePersonalizedMeditation,
+  generatePersonalizedAffirmations,
+} from '../lib/iaPersonnalisee';
+import { textToSpeech } from '../lib/elevenLabs';
+import { debloquerAudio } from '../lib/iosAudioUnlock';
+import { sauvegarderDansBibliotheque, urlVersBlob } from '../lib/bibliotheque';
 import { getZenPlayer } from '../lib/zenMusic';
 import { stockage } from '../lib/storage';
 import SOSFlottant from '../lib/SOSFlottant';
 
 type Outil = 'tapping' | 'coherence' | 'meditation' | 'affirmations';
 
-// Scripts importés depuis scriptsTherapeutiques.ts
-
-const OUTILS_CONFIG: Record<Outil, { titre: string; desc: string; icon: string; couleur: string; script: {texte: string; pause: number}[] }> = {
-  tapping:      { titre: 'Tapping EFT',         desc: 'Libère le stress point par point', icon: '🫆', couleur: '#FF6B6B', script: TAPPING_EFT },
-  coherence:    { titre: 'Cohérence Cardiaque',  desc: '5 min pour réguler le système nerveux', icon: '💓', couleur: '#4ECDC4', script: COHERENCE_CARDIAQUE },
-  meditation:   { titre: 'Méditation Bienveillance', desc: 'Metta — cultivar la compassion', icon: '🙏', couleur: '#9D84B7', script: MEDITATION_BIENVEILLANCE },
-  affirmations: { titre: 'Affirmations Guidées', desc: 'Renforce tes nouvelles croyances', icon: '✨', couleur: '#FFD93D', script: AFFIRMATIONS_GUIDEES },
+const OUTILS_CONFIG: Record<Outil, { titre: string; desc: string; icon: string; couleur: string; dureeMin: number }> = {
+  tapping:      { titre: 'Tapping EFT',              desc: 'Libère le stress point par point',      icon: '🫆', couleur: '#FF6B6B', dureeMin: 10 },
+  coherence:    { titre: 'Cohérence Cardiaque',       desc: '5 min pour réguler le système nerveux', icon: '💓', couleur: '#4ECDC4', dureeMin: 5 },
+  meditation:   { titre: 'Méditation Bienveillance',  desc: 'Metta — cultiver la compassion',        icon: '🙏', couleur: '#9D84B7', dureeMin: 20 },
+  affirmations: { titre: 'Affirmations Guidées',      desc: 'Renforce tes nouvelles croyances',      icon: '✨', couleur: '#FFD93D', dureeMin: 10 },
 };
+
+const GENERATEURS: Record<Outil, (profile: ReturnType<typeof loadUserProfile>) => Promise<string>> = {
+  tapping: generatePersonalizedTapping,
+  coherence: generatePersonalizedCoherence,
+  meditation: generatePersonalizedMeditation,
+  affirmations: generatePersonalizedAffirmations,
+};
+
+// Outils avec musique de fond douce derrière la voix
+const AVEC_MUSIQUE: Outil[] = ['meditation', 'affirmations', 'coherence'];
 
 export default function OutilsBonus() {
   const navigate = useNavigate();
   const [outil, setOutil] = useState<Outil | null>(null);
   const [phase, setPhase] = useState<'choix' | 'session' | 'apres'>('choix');
-  const [enPauseEtat, setEnPauseEtat] = useState(false);
-  const [progres, setProgres] = useState(0);
-  const [total, setTotal] = useState(0);
+  const [isLoading, setIsLoading] = useState(false);
+  const [enPause, setEnPause] = useState(false);
+  const [erreurGeneration, setErreurGeneration] = useState(false);
+  const [erreurMessage, setErreurMessage] = useState('');
   const [tempsSession, setTempsSession] = useState(0);
-  const [texteActuel, setTexteActuel] = useState('');
+  const [audioPlayer, setAudioPlayer] = useState<HTMLAudioElement | null>(null);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const zenPlayer = getZenPlayer();
-  // Outils avec musique de fond (méditation et affirmations)
-  const AVEC_MUSIQUE: Outil[] = ['meditation', 'affirmations', 'coherence'];
 
-  useEffect(() => () => { arreter(); zenPlayer.stop(); if (intervalRef.current) clearInterval(intervalRef.current); }, []);
+  // Coupe systématiquement le son si l'utilisateur quitte la page.
+  useEffect(() => {
+    return () => {
+      audioPlayer?.pause();
+      zenPlayer.stop();
+      if (intervalRef.current) clearInterval(intervalRef.current);
+    };
+  }, [audioPlayer]);
 
   const demarrer = async (o: Outil) => {
-    setOutil(o);
-    const cfg = OUTILS_CONFIG[o];
-    setTotal(cfg.script.length);
-    setPhase('session');
-    intervalRef.current = setInterval(() => setTempsSession(t => t + 1), 1000);
+    // 🔓 Débloque l'audio AVANT tout await — indispensable sur iOS Safari.
+    const audio = debloquerAudio();
+    setAudioPlayer(audio);
+    if (AVEC_MUSIQUE.includes(o)) zenPlayer.play(0.35);
 
-    // Musique + voix depuis le geste utilisateur (fix iOS)
-    if (AVEC_MUSIQUE.includes(o)) {
-      zenPlayer.play(0.35);
+    setOutil(o);
+    setIsLoading(true);
+    setErreurGeneration(false);
+    setErreurMessage('');
+    setEnPause(false);
+    setTempsSession(0);
+    setPhase('session');
+
+    try {
+      const profile = loadUserProfile();
+      const script = await GENERATEURS[o](profile);
+      const url = await textToSpeech(script);
+
+      if (!url) {
+        setErreurGeneration(true);
+        return;
+      }
+
+      audio.src = url;
+      audio.play().catch(err => console.error('Error playing audio:', err));
+
+      // Une fois la voix terminée, on arrête proprement (sinon la musique
+      // de fond continuerait seule indéfiniment).
+      audio.onended = () => terminer();
+
+      // Ajoute automatiquement cette séance à la bibliothèque.
+      urlVersBlob(url)
+        .then(blob => sauvegarderDansBibliotheque(o, OUTILS_CONFIG[o].titre, OUTILS_CONFIG[o].dureeMin, script, blob))
+        .catch(() => {});
+
+      intervalRef.current = setInterval(() => {
+        setTempsSession(prev => prev + 1);
+      }, 1000);
+    } catch (error) {
+      console.error('Error generating bonus session:', error);
+      setErreurMessage(error instanceof Error ? error.message : '');
+      setErreurGeneration(true);
+    } finally {
+      setIsLoading(false);
     }
-    const dureeMap: Record<string, number> = { tapping: 10, coherence: 5, meditation: 20, affirmations: 10 };
-    const { segments } = await genererSession(o, dureeMap[o] || 10, cfg.script);
-    jouerScriptGuidé(segments, (i, _t, txt) => { setProgres(i); if (txt) setTexteActuel(txt); }, () => {
-      if (intervalRef.current) clearInterval(intervalRef.current);
-      zenPlayer.stop();
-      setPhase('apres');
-    });
   };
 
   const togglePause = () => {
-    if (enPauseEtat) {
-      reprendre();
+    if (!audioPlayer) return;
+
+    if (enPause) {
+      audioPlayer.play().catch(err => console.error('Error resuming audio:', err));
       if (outil && AVEC_MUSIQUE.includes(outil)) zenPlayer.play(0.35);
-      setEnPauseEtat(false);
+      intervalRef.current = setInterval(() => setTempsSession(t => t + 1), 1000);
+      setEnPause(false);
     } else {
-      mettreEnPause();
+      audioPlayer.pause();
       zenPlayer.stop();
-      setEnPauseEtat(true);
+      if (intervalRef.current) clearInterval(intervalRef.current);
+      setEnPause(true);
     }
+  };
+
+  const terminer = () => {
+    audioPlayer?.pause();
+    zenPlayer.stop();
+    if (intervalRef.current) clearInterval(intervalRef.current);
+    setPhase('apres');
   };
 
   const sauvegarder = () => {
@@ -73,19 +133,24 @@ export default function OutilsBonus() {
       duree_minutes: Math.round(tempsSession / 60),
       efficacite: 70,
     });
-    zenPlayer.stop();
     setPhase('choix');
     setOutil(null);
     setTempsSession(0);
-    setProgres(0);
+  };
+
+  const handleRetour = () => {
+    audioPlayer?.pause();
+    zenPlayer.stop();
+    if (intervalRef.current) clearInterval(intervalRef.current);
+    navigate('/outils-therapeutiques');
   };
 
   const cfg = outil ? OUTILS_CONFIG[outil] : null;
 
   return (
-    <div className="page" style={{ background: 'var(--bg)' }}>
+    <div className="page">
       <div className="conteneur-etroit" style={{ paddingTop: '2rem' }}>
-        <button onClick={() => { arreter(); navigate('/outils-therapeutiques'); }}
+        <button onClick={handleRetour}
           style={{ background: 'none', border: 'none', color: 'var(--encre-3)', cursor: 'pointer', marginBottom: '1.5rem', fontSize: '0.9rem' }}>
           ← Retour aux outils
         </button>
@@ -93,7 +158,10 @@ export default function OutilsBonus() {
         <div style={{ background: 'var(--carte-bg)', borderRadius: '16px', padding: '2rem', marginBottom: '1.5rem', border: '1px solid var(--carte-border)' }}>
           <div style={{ fontSize: '2.5rem', marginBottom: '0.75rem' }}>🌟</div>
           <h1 style={{ marginBottom: '0.5rem' }}>Outils Complémentaires</h1>
-          <p style={{ color: 'var(--encre-2)', margin: 0 }}>Tapping, cohérence cardiaque, méditation et affirmations — tous guidés par la voix.</p>
+          <p style={{ color: 'var(--encre-2)', margin: 0 }}>
+            Tapping, cohérence cardiaque, méditation et affirmations — voix personnalisée
+            générée pour toi, comme les autres outils.
+          </p>
         </div>
 
         {phase === 'choix' && (
@@ -108,7 +176,7 @@ export default function OutilsBonus() {
                 </div>
                 <div style={{ flex: 1 }}>
                   <div style={{ fontWeight: 700, color: 'var(--encre)', marginBottom: '0.2rem' }}>{val.titre}</div>
-                  <div style={{ fontSize: '0.85rem', color: 'var(--encre-3)' }}>{val.desc}</div>
+                  <div style={{ fontSize: '0.85rem', color: 'var(--encre-3)' }}>{val.desc} · {val.dureeMin} min</div>
                 </div>
                 <div style={{ color: val.couleur, fontWeight: 700, fontSize: '1.2rem' }}>▶</div>
               </div>
@@ -116,25 +184,54 @@ export default function OutilsBonus() {
           </div>
         )}
 
-        {phase === 'session' && cfg && (
+        {phase === 'session' && cfg && erreurGeneration && (
+          <div style={{ background: 'var(--carte-bg)', borderRadius: '16px', padding: '2rem', border: '1px solid var(--carte-border)', textAlign: 'center' }}>
+            <h2 style={{ marginBottom: '1rem' }}>Un souci technique</h2>
+            <p style={{ color: 'var(--encre-2)', marginBottom: '1.4rem' }}>
+              {erreurMessage || `La génération de ta session ${cfg.titre} n'a pas fonctionné cette fois-ci. Rien n'est perdu — tu peux réessayer.`}
+            </p>
+            <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'center' }}>
+              <button onClick={() => { setPhase('choix'); setOutil(null); }}
+                style={{ padding: '0.85rem 1.5rem', borderRadius: '999px', background: 'var(--bg-2)', border: '1.5px solid var(--carte-border)', fontWeight: 700, cursor: 'pointer', color: 'var(--encre)' }}>
+                Retour
+              </button>
+              <button onClick={() => demarrer(outil!)}
+                style={{ padding: '0.85rem 1.5rem', borderRadius: '999px', background: cfg.couleur, color: 'white', border: 'none', fontWeight: 700, cursor: 'pointer' }}>
+                Réessayer
+              </button>
+            </div>
+          </div>
+        )}
+
+        {phase === 'session' && cfg && !erreurGeneration && (
           <div style={{ background: 'var(--carte-bg)', borderRadius: '16px', padding: '2rem', border: '1px solid var(--carte-border)', textAlign: 'center' }}>
             <div style={{ fontSize: '3rem', marginBottom: '0.75rem' }}>{cfg.icon}</div>
             <h2 style={{ marginBottom: '0.5rem' }}>{cfg.titre}</h2>
-            <p style={{ color: 'var(--encre-3)', marginBottom: '2rem', fontSize: '0.9rem' }}>Laisse-toi guider</p>
 
-            <div style={{ background: 'var(--bg-2)', borderRadius: '999px', height: 8, margin: '0 auto 1rem', maxWidth: 300 }}>
-              <div style={{ height: 8, borderRadius: '999px', background: cfg.couleur, width: `${total > 0 ? (progres / total) * 100 : 0}%`, transition: 'width 0.5s' }} />
-            </div>
-            <p style={{ color: 'var(--encre-3)', marginBottom: '2rem', fontSize: '0.88rem' }}>
-              {enPauseEtat ? '⏸ En pause' : `🎙️ ${cfg.titre} en cours...`}
-            </p>
+            {isLoading ? (
+              <p style={{ color: 'var(--encre-3)', marginBottom: '2rem', fontSize: '0.9rem' }}>
+                Ta voix personnalisée se prépare, quelques instants...
+              </p>
+            ) : (
+              <>
+                <div style={{
+                  fontSize: '1.8rem', fontWeight: 700, color: cfg.couleur, margin: '1rem 0',
+                }}>
+                  {Math.floor(tempsSession / 60)}:{String(tempsSession % 60).padStart(2, '0')}
+                </div>
+                <p style={{ color: 'var(--encre-3)', marginBottom: '2rem', fontSize: '0.88rem' }}>
+                  {enPause ? '⏸ En pause' : `🎙️ ${cfg.titre} en cours...`}
+                </p>
+              </>
+            )}
 
             <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'center' }}>
-              <button onClick={togglePause} style={{ padding: '0.85rem 1.5rem', borderRadius: '999px', background: 'var(--bg-2)', border: '1.5px solid var(--carte-border)', fontWeight: 700, cursor: 'pointer', color: 'var(--encre)' }}>
-                {enPauseEtat ? '▶ Reprendre' : '⏸ Pause'}
+              <button onClick={togglePause} disabled={isLoading}
+                style={{ padding: '0.85rem 1.5rem', borderRadius: '999px', background: enPause ? cfg.couleur : 'var(--bg-2)', color: enPause ? 'white' : 'var(--encre)', border: '1.5px solid var(--carte-border)', fontWeight: 700, cursor: isLoading ? 'default' : 'pointer', opacity: isLoading ? 0.5 : 1 }}>
+                {enPause ? '▶ Reprendre' : '⏸ Pause'}
               </button>
-              <button onClick={() => { arreter(); if (intervalRef.current) clearInterval(intervalRef.current); setPhase('apres'); }}
-                style={{ padding: '0.85rem 1.5rem', borderRadius: '999px', background: 'var(--chaud-pale)', border: '1.5px solid var(--chaud)', fontWeight: 600, cursor: 'pointer', color: 'var(--chaud)' }}>
+              <button onClick={terminer} disabled={isLoading}
+                style={{ padding: '0.85rem 1.5rem', borderRadius: '999px', background: 'var(--chaud-pale)', border: '1.5px solid var(--chaud)', fontWeight: 600, cursor: isLoading ? 'default' : 'pointer', color: 'var(--chaud)', opacity: isLoading ? 0.5 : 1 }}>
                 Terminer
               </button>
             </div>

@@ -5,6 +5,7 @@ import { loadUserProfile, generatePersonalizedVisualization } from '../lib/iaPer
 import { textToSpeech } from '../lib/elevenLabs';
 import { stockage } from '../lib/storage';
 import { debloquerAudio } from '../lib/iosAudioUnlock';
+import { sauvegarderDansBibliotheque, urlVersBlob } from '../lib/bibliotheque';
 import SOSFlottant from '../lib/SOSFlottant';
 
 type VisuType = 'abondance' | 'guerison' | 'enfant' | 'ressources' | 'safe' | 'dialogue';
@@ -81,15 +82,25 @@ export default function VisualisationsProAudio() {
 
       // Réutilise le MÊME élément <audio> déjà débloqué plus haut.
       audio.src = url;
+
+      // Ajoute automatiquement cette séance à la bibliothèque.
+      urlVersBlob(url)
+        .then(blob => sauvegarderDansBibliotheque('visualization_pro', visualisations[type!].titre, DUREES_MIN[type!] || 30, script, blob))
+        .catch(() => {});
       await startBinauralBeats('meditation', { type: 'gratitude' });
       audio.play().catch(err => console.error('Error playing:', err));
       setIsPlaying(true);
+
+      // Si l'audio se termine naturellement avant la durée cible, on
+      // termine proprement plutôt que de laisser les binaural beats seuls.
+      audio.onended = () => handleTerminerSession();
 
       intervalRef.current = setInterval(() => {
         setSessionTime(prev => {
           const maxTime = (DUREES_MIN[type!] || 30) * 60;
           if (prev >= maxTime) {
             if (intervalRef.current) clearInterval(intervalRef.current);
+            handleTerminerSession();
             return prev;
           }
           return prev + 1;
@@ -163,22 +174,22 @@ export default function VisualisationsProAudio() {
   };
 
   return (
-    <div className="page" style={{ background: '#FAFAF8' }}>
+    <div className="page">
       <div className="conteneur-etroit" style={{ paddingTop: '1.5rem' }}>
-        <button onClick={handleRetour} style={{ background: 'none', border: 'none', color: '#888', cursor: 'pointer', marginBottom: '1.2rem' }}>
+        <button onClick={handleRetour} style={{ background: 'none', border: 'none', color: 'var(--encre-3)', cursor: 'pointer', marginBottom: '1.2rem' }}>
           Retour
         </button>
 
-        <div style={{ background: 'white', borderRadius: '12px', padding: '1.8rem', marginBottom: '1.4rem', border: '1px solid #E8E6E1' }}>
+        <div style={{ background: 'var(--carte-bg)', borderRadius: '12px', padding: '1.8rem', marginBottom: '1.4rem', border: '1px solid var(--carte-border)' }}>
           <h1 style={{ fontSize: '2rem', margin: '0 0 1rem' }}>Visualisations Cratrices</h1>
-          <p style={{ color: '#888', margin: 0 }}>
+          <p style={{ color: 'var(--encre-3)', margin: 0 }}>
             Guidage narratif personnalisé + voix professionnelle + binaural beats.
           </p>
         </div>
 
         {phase === 'choix' && (
-          <div style={{ background: 'white', borderRadius: '12px', padding: '1.8rem', border: '1px solid #E8E6E1' }}>
-            <h2 style={{ fontSize: '1.4rem', marginBottom: '1.4rem', color: '#222' }}>Choisis une visualization</h2>
+          <div style={{ background: 'var(--carte-bg)', borderRadius: '12px', padding: '1.8rem', border: '1px solid var(--carte-border)' }}>
+            <h2 style={{ fontSize: '1.4rem', marginBottom: '1.4rem', color: 'var(--encre)' }}>Choisis une visualization</h2>
             
             <div style={{
               display: 'grid',
@@ -192,10 +203,10 @@ export default function VisualisationsProAudio() {
                   onClick={() => setType(key as VisuType)}
                   style={{
                     padding: '1.4rem',
-                    border: type === key ? '2px solid #FFD93D' : '2px solid #E8E6E1',
+                    border: type === key ? '2px solid #FFD93D' : '2px solid var(--carte-border)',
                     borderRadius: '8px',
                     cursor: 'pointer',
-                    background: type === key ? 'rgba(255, 217, 61, 0.1)' : 'white',
+                    background: type === key ? 'rgba(255, 217, 61, 0.1)' : 'var(--carte-bg)',
                     textAlign: 'center',
                     transition: 'all 0.2s',
                   }}
@@ -203,13 +214,13 @@ export default function VisualisationsProAudio() {
                   <div style={{ fontSize: '2rem', marginBottom: '0.6rem' }}>
                     {val.icon}
                   </div>
-                  <div style={{ fontWeight: 700, fontSize: '0.95rem', marginBottom: '0.4rem', color: '#222' }}>
+                  <div style={{ fontWeight: 700, fontSize: '0.95rem', marginBottom: '0.4rem', color: 'var(--encre)' }}>
                     {val.titre}
                   </div>
-                  <div style={{ fontSize: '0.8rem', color: '#666', marginBottom: '0.4rem' }}>
+                  <div style={{ fontSize: '0.8rem', color: 'var(--encre-2)', marginBottom: '0.4rem' }}>
                     {val.duree}
                   </div>
-                  <div style={{ fontSize: '0.75rem', color: '#999' }}>
+                  <div style={{ fontSize: '0.75rem', color: 'var(--encre-3)' }}>
                     {val.desc}
                   </div>
                 </div>
@@ -222,8 +233,8 @@ export default function VisualisationsProAudio() {
               style={{
                 width: '100%',
                 padding: '1.2rem',
-                background: isLoading ? '#ccc' : '#FFD93D',
-                color: '#222',
+                background: isLoading ? 'var(--carte-border)' : '#FFD93D',
+                color: 'var(--encre)',
                 border: 'none',
                 borderRadius: '8px',
                 fontSize: '1.1rem',
@@ -237,23 +248,23 @@ export default function VisualisationsProAudio() {
         )}
 
         {phase === 'session' && erreurGeneration && (
-          <div style={{ background: 'white', borderRadius: '12px', padding: '1.8rem', border: '1px solid #E8E6E1', textAlign: 'center' }}>
-            <h2 style={{ fontSize: '1.4rem', marginBottom: '1rem', color: '#222' }}>
+          <div style={{ background: 'var(--carte-bg)', borderRadius: '12px', padding: '1.8rem', border: '1px solid var(--carte-border)', textAlign: 'center' }}>
+            <h2 style={{ fontSize: '1.4rem', marginBottom: '1rem', color: 'var(--encre)' }}>
               Un souci technique
             </h2>
-            <p style={{ color: '#666', marginBottom: '1.4rem' }}>
+            <p style={{ color: 'var(--encre-2)', marginBottom: '1.4rem' }}>
               {erreurMessage || 'La génération de ta visualisation personnalisée n\'a pas fonctionné cette fois-ci. Rien n\'est perdu — tu peux réessayer, ou revenir plus tard.'}
             </p>
             <div style={{ display: 'flex', gap: '0.8rem' }}>
               <button
                 onClick={() => setPhase('choix')}
-                style={{ flex: 1, padding: '1rem', background: '#F0F0ED', border: '1.5px solid #E0DDD8', borderRadius: '8px', cursor: 'pointer', fontWeight: 600 }}
+                style={{ flex: 1, padding: '1rem', background: 'var(--bg-2)', border: '1.5px solid var(--carte-border)', borderRadius: '8px', cursor: 'pointer', fontWeight: 600 }}
               >
                 Retour
               </button>
               <button
                 onClick={handleDemarrerSession}
-                style={{ flex: 1, padding: '1rem', background: '#FFD93D', color: '#222', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: 600 }}
+                style={{ flex: 1, padding: '1rem', background: '#FFD93D', color: 'var(--encre)', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: 600 }}
               >
                 Réessayer
               </button>
@@ -262,8 +273,8 @@ export default function VisualisationsProAudio() {
         )}
 
         {phase === 'session' && !erreurGeneration && (
-          <div style={{ background: 'white', borderRadius: '12px', padding: '1.8rem', border: '1px solid #E8E6E1', textAlign: 'center' }}>
-            <h2 style={{ fontSize: '1.4rem', marginBottom: '1rem', color: '#222' }}>
+          <div style={{ background: 'var(--carte-bg)', borderRadius: '12px', padding: '1.8rem', border: '1px solid var(--carte-border)', textAlign: 'center' }}>
+            <h2 style={{ fontSize: '1.4rem', marginBottom: '1rem', color: 'var(--encre)' }}>
               {isLoading ? 'Préparation de ta visualisation...' : visualisations[type!].titre}
             </h2>
             
@@ -279,7 +290,7 @@ export default function VisualisationsProAudio() {
             />
 
             {isLoading ? (
-              <p style={{ color: '#666', marginBottom: '1.4rem' }}>
+              <p style={{ color: 'var(--encre-2)', marginBottom: '1.4rem' }}>
                 Ta voix personnalisée et les Alpha beats se préparent, quelques instants...
               </p>
             ) : (
@@ -300,7 +311,7 @@ export default function VisualisationsProAudio() {
                   </div>
                 )}
 
-                <p style={{ color: '#666', marginBottom: '1.4rem' }}>
+                <p style={{ color: 'var(--encre-2)', marginBottom: '1.4rem' }}>
                   Ferme tes yeux. Visualise en detail. Utilise tous tes sens.
                 </p>
               </>
@@ -313,9 +324,9 @@ export default function VisualisationsProAudio() {
                 style={{
                   flex: 1,
                   padding: '1rem',
-                  background: enPause ? '#FFD93D' : '#F0F0ED',
-                  color: '#222',
-                  border: '1.5px solid #E0DDD8',
+                  background: enPause ? '#FFD93D' : 'var(--bg-2)',
+                  color: 'var(--encre)',
+                  border: '1.5px solid var(--carte-border)',
                   borderRadius: '8px',
                   cursor: isLoading ? 'default' : 'pointer',
                   opacity: isLoading ? 0.5 : 1,
@@ -330,8 +341,8 @@ export default function VisualisationsProAudio() {
                 style={{
                   flex: 1,
                   padding: '1rem',
-                  background: '#F0F0ED',
-                  border: '1.5px solid #E0DDD8',
+                  background: 'var(--bg-2)',
+                  border: '1.5px solid var(--carte-border)',
                   borderRadius: '8px',
                   cursor: isLoading ? 'default' : 'pointer',
                   opacity: isLoading ? 0.5 : 1,
@@ -345,11 +356,11 @@ export default function VisualisationsProAudio() {
         )}
 
         {phase === 'apres' && (
-          <div style={{ background: 'white', borderRadius: '12px', padding: '1.8rem', border: '1px solid #E8E6E1' }}>
-            <h2 style={{ fontSize: '1.4rem', marginBottom: '1.4rem', color: '#222' }}>Apres</h2>
+          <div style={{ background: 'var(--carte-bg)', borderRadius: '12px', padding: '1.8rem', border: '1px solid var(--carte-border)' }}>
+            <h2 style={{ fontSize: '1.4rem', marginBottom: '1.4rem', color: 'var(--encre)' }}>Apres</h2>
 
             <div style={{ marginBottom: '1.4rem' }}>
-              <label style={{ display: 'block', fontWeight: 600, marginBottom: '0.6rem', color: '#222' }}>
+              <label style={{ display: 'block', fontWeight: 600, marginBottom: '0.6rem', color: 'var(--encre)' }}>
                 Qu'as-tu ressenti ? (0-10)
               </label>
               <input type="range" min="0" max="10" value={ressentieScore} onChange={(e) => setRessentieScore(Number(e.target.value))} style={{ width: '100%' }} />
@@ -364,7 +375,7 @@ export default function VisualisationsProAudio() {
                 width: '100%',
                 padding: '1.2rem',
                 background: '#FFD93D',
-                color: '#222',
+                color: 'var(--encre)',
                 border: 'none',
                 borderRadius: '8px',
                 cursor: 'pointer',
