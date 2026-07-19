@@ -26,12 +26,18 @@ export default function Bibliotheque() {
   const [chargement, setChargement] = useState(true);
   const [lectureId, setLectureId] = useState<string | null>(null);
   const [audioEnCours, setAudioEnCours] = useState(false);
+  const [enBoucle, setEnBoucle] = useState(false);
   const audioPlayerRef = useRef<HTMLAudioElement | null>(null);
 
   useEffect(() => {
     listerBibliotheque().then(s => { setSeances(s); setChargement(false); });
     return () => { audioPlayerRef.current?.pause(); };
   }, []);
+
+  // Applique le mode boucle en direct, même sur une lecture déjà en cours
+  useEffect(() => {
+    if (audioPlayerRef.current) audioPlayerRef.current.loop = enBoucle;
+  }, [enBoucle]);
 
   const lancer = async (seance: SeanceBibliotheque) => {
     audioPlayerRef.current?.pause();
@@ -52,6 +58,7 @@ export default function Bibliotheque() {
     if (!url) return;
 
     const audio = new Audio(url);
+    audio.loop = enBoucle;
     audioPlayerRef.current = audio;
     audio.onended = () => setAudioEnCours(false);
     audio.play().catch(err => console.error('Erreur lecture:', err));
@@ -92,10 +99,18 @@ export default function Bibliotheque() {
         <div style={{ background: 'var(--carte-bg)', borderRadius: '16px', padding: '2rem', marginBottom: '1.5rem', border: '1px solid var(--carte-border)' }}>
           <div style={{ fontSize: '2.5rem', marginBottom: '0.75rem' }}>🎧</div>
           <h1 style={{ marginBottom: '0.5rem' }}>Ma bibliothèque</h1>
-          <p style={{ color: 'var(--encre-2)', margin: 0 }}>
+          <p style={{ color: 'var(--encre-2)', margin: '0 0 1rem' }}>
             Chaque séance générée est automatiquement gardée ici. Relance-la instantanément
             — sans attendre une nouvelle génération, et sans consommer de crédit Eleven Labs.
           </p>
+          <p style={{ color: 'var(--encre-3)', fontSize: '0.85rem', margin: '0 0 1rem' }}>
+            {chargement ? '…' : `${seances.length} séance${seances.length !== 1 ? 's' : ''} sauvegardée${seances.length !== 1 ? 's' : ''} sur cet appareil`}
+          </p>
+          <label style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', cursor: 'pointer', color: 'var(--encre)' }}>
+            <input type="checkbox" checked={enBoucle} onChange={e => setEnBoucle(e.target.checked)}
+              style={{ width: 18, height: 18, accentColor: 'var(--accent)' }} />
+            🔁 Écouter en boucle
+          </label>
         </div>
 
         {chargement && (

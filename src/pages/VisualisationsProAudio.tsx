@@ -32,6 +32,8 @@ export default function VisualisationsProAudio() {
   const [audioPlayer, setAudioPlayer] = useState<HTMLAudioElement | null>(null);
   const [erreurGeneration, setErreurGeneration] = useState(false);
   const [erreurMessage, setErreurMessage] = useState('');
+  const [enBoucle, setEnBoucle] = useState(false);
+  const [statutBibliotheque, setStatutBibliotheque] = useState<'idle' | 'ok' | 'erreur'>('idle');
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   // Coupe systématiquement le son et les binaural beats si l'utilisateur
@@ -82,23 +84,27 @@ export default function VisualisationsProAudio() {
 
       // Réutilise le MÊME élément <audio> déjà débloqué plus haut.
       audio.src = url;
+      audio.loop = enBoucle;
 
-      // Ajoute automatiquement cette séance à la bibliothèque.
+      // Ajoute automatiquement cette séance à la bibliothèque, avec
+      // confirmation visible plutôt que silencieuse.
+      setStatutBibliotheque('idle');
       urlVersBlob(url)
         .then(blob => sauvegarderDansBibliotheque('visualization_pro', visualisations[type!].titre, DUREES_MIN[type!] || 30, script, blob))
-        .catch(() => {});
+        .then(() => setStatutBibliotheque('ok'))
+        .catch(() => setStatutBibliotheque('erreur'));
       await startBinauralBeats('meditation', { type: 'gratitude' });
       audio.play().catch(err => console.error('Error playing:', err));
       setIsPlaying(true);
 
       // Si l'audio se termine naturellement avant la durée cible, on
-      // termine proprement plutôt que de laisser les binaural beats seuls.
-      audio.onended = () => handleTerminerSession();
+      // termine proprement — sauf en mode boucle, où il recommence seul.
+      audio.onended = () => { if (!enBoucle) handleTerminerSession(); };
 
       intervalRef.current = setInterval(() => {
         setSessionTime(prev => {
           const maxTime = (DUREES_MIN[type!] || 30) * 60;
-          if (prev >= maxTime) {
+          if (!enBoucle && prev >= maxTime) {
             if (intervalRef.current) clearInterval(intervalRef.current);
             handleTerminerSession();
             return prev;
@@ -227,6 +233,12 @@ export default function VisualisationsProAudio() {
               ))}
             </div>
 
+            <label style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', margin: '1rem 0', cursor: 'pointer', color: 'var(--encre)' }}>
+              <input type="checkbox" checked={enBoucle} onChange={e => setEnBoucle(e.target.checked)}
+                style={{ width: 18, height: 18, accentColor: '#FFD93D' }} />
+              🔁 Écouter en boucle (recommence tout seul jusqu'à ce que je clique sur Terminer)
+            </label>
+
             <button
               onClick={() => type && handleDemarrerSession()}
               disabled={!type || isLoading}
@@ -308,7 +320,19 @@ export default function VisualisationsProAudio() {
                   <div style={{ color: '#FFD93D', marginBottom: '1.4rem', fontSize: '0.95rem' }}>
                     🎙️ Guidage narratif personnalisé<br />
                     🧠 Alpha beats pour creativilite
+                    {enBoucle && <><br />🔁 Lecture en boucle</>}
                   </div>
+                )}
+
+                {statutBibliotheque === 'ok' && (
+                  <p style={{ color: 'var(--encre-3)', fontSize: '0.8rem', marginBottom: '1rem' }}>
+                    🎧 Ajoutée à Ma bibliothèque pour un lancement instantané la prochaine fois
+                  </p>
+                )}
+                {statutBibliotheque === 'erreur' && (
+                  <p style={{ color: 'var(--chaud)', fontSize: '0.8rem', marginBottom: '1rem' }}>
+                    ⚠️ N'a pas pu être ajoutée à Ma bibliothèque (stockage local plein ou indisponible)
+                  </p>
                 )}
 
                 <p style={{ color: 'var(--encre-2)', marginBottom: '1.4rem' }}>

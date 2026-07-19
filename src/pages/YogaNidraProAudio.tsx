@@ -24,6 +24,8 @@ export default function YogaNidraProAudio() {
   const [audioPlayer, setAudioPlayer] = useState<HTMLAudioElement | null>(null);
   const [erreurGeneration, setErreurGeneration] = useState(false);
   const [erreurMessage, setErreurMessage] = useState('');
+  const [enBoucle, setEnBoucle] = useState(false);
+  const [statutBibliotheque, setStatutBibliotheque] = useState<'idle' | 'ok' | 'erreur'>('idle');
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   // Coupe systématiquement le son et les binaural beats si l'utilisateur
@@ -81,12 +83,16 @@ export default function YogaNidraProAudio() {
       // Réutilise le MÊME élément <audio> déjà débloqué plus haut — c'est
       // ce qui permet à iOS d'accepter la lecture malgré le délai réseau.
       audio.src = url;
+      audio.loop = enBoucle;
 
       // Ajoute automatiquement cette séance à la bibliothèque pour un
-      // lancement instantané la prochaine fois (best-effort, en arrière-plan).
+      // lancement instantané la prochaine fois — avec confirmation visible
+      // plutôt que silencieuse (pour repérer une éventuelle panne).
+      setStatutBibliotheque('idle');
       urlVersBlob(url)
         .then(blob => sauvegarderDansBibliotheque('yoga_nidra_pro', `Yoga Nidra ${durees[duree].titre}`, durees[duree].min, script, blob))
-        .catch(() => {});
+        .then(() => setStatutBibliotheque('ok'))
+        .catch(() => setStatutBibliotheque('erreur'));
 
       // Lance les binaural beats
       await startBinauralBeats('yoga', { duration: duree });
@@ -96,16 +102,19 @@ export default function YogaNidraProAudio() {
       setIsPlaying(true);
 
       // Si l'audio se termine naturellement avant la durée cible, on
-      // termine proprement la session plutôt que de laisser les binaural
-      // beats seuls tourner indéfiniment dans le silence.
-      audio.onended = () => handleTerminerSession();
+      // termine proprement la session — SAUF en mode boucle, où l'audio
+      // recommence tout seul (l'événement "ended" ne se déclenche alors
+      // jamais nativement, mais on garde la garde par sécurité).
+      audio.onended = () => { if (!enBoucle) handleTerminerSession(); };
 
       // Track le temps — et termine VRAIMENT la session une fois la durée
       // choisie atteinte (avant, seul le chrono s'arrêtait d'afficher,
       // mais le son et les binaural beats continuaient à jouer sans fin).
+      // En mode boucle, pas d'arrêt automatique : c'est l'utilisateur qui
+      // décide quand s'arrêter.
       intervalRef.current = setInterval(() => {
         setSessionTime(prev => {
-          if (prev >= durees[duree!].min * 60) {
+          if (!enBoucle && prev >= durees[duree!].min * 60) {
             if (intervalRef.current) clearInterval(intervalRef.current);
             handleTerminerSession();
             return prev;
@@ -271,6 +280,12 @@ export default function YogaNidraProAudio() {
               🧠 Les binaural beats scientifiques vont maximiser l'efficacité.
             </div>
 
+            <label style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', marginBottom: '1.4rem', cursor: 'pointer', color: 'var(--encre)' }}>
+              <input type="checkbox" checked={enBoucle} onChange={e => setEnBoucle(e.target.checked)}
+                style={{ width: 18, height: 18, accentColor: '#4ECDC4' }} />
+              🔁 Écouter en boucle (recommence tout seul jusqu'à ce que je clique sur Terminer)
+            </label>
+
             <div style={{ display: 'flex', gap: '0.8rem' }}>
               <button onClick={() => setPhase('choix')} style={{ flex: 1, padding: '1rem', background: 'var(--bg-2)', border: '1.5px solid var(--carte-border)', borderRadius: '8px', cursor: 'pointer', fontWeight: 600 }}>
                 Retour
@@ -356,7 +371,19 @@ export default function YogaNidraProAudio() {
                   <div style={{ color: '#4ECDC4', marginBottom: '1.4rem', fontSize: '0.95rem' }}>
                     🎙️ Voix personnalisée en cours<br />
                     🧠 Binaural beats scientifiques activés
+                    {enBoucle && <><br />🔁 Lecture en boucle</>}
                   </div>
+                )}
+
+                {statutBibliotheque === 'ok' && (
+                  <p style={{ color: 'var(--encre-3)', fontSize: '0.8rem', marginBottom: '1rem' }}>
+                    🎧 Ajoutée à Ma bibliothèque pour un lancement instantané la prochaine fois
+                  </p>
+                )}
+                {statutBibliotheque === 'erreur' && (
+                  <p style={{ color: 'var(--chaud)', fontSize: '0.8rem', marginBottom: '1rem' }}>
+                    ⚠️ N'a pas pu être ajoutée à Ma bibliothèque (stockage local plein ou indisponible)
+                  </p>
                 )}
 
                 <p style={{ color: 'var(--encre-2)', marginBottom: '1.4rem' }}>

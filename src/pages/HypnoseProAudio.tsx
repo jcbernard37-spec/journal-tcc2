@@ -24,6 +24,8 @@ export default function HypnoseProAudio() {
   const [audioPlayer, setAudioPlayer] = useState<HTMLAudioElement | null>(null);
   const [erreurGeneration, setErreurGeneration] = useState(false);
   const [erreurMessage, setErreurMessage] = useState('');
+  const [enBoucle, setEnBoucle] = useState(false);
+  const [statutBibliotheque, setStatutBibliotheque] = useState<'idle' | 'ok' | 'erreur'>('idle');
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   // Coupe systématiquement le son et les binaural beats si l'utilisateur
@@ -71,24 +73,28 @@ export default function HypnoseProAudio() {
 
       // Réutilise le MÊME élément <audio> déjà débloqué plus haut.
       audio.src = url;
+      audio.loop = enBoucle;
 
-      // Ajoute automatiquement cette séance à la bibliothèque.
+      // Ajoute automatiquement cette séance à la bibliothèque, avec
+      // confirmation visible plutôt que silencieuse.
       const dureeMin = niveau === 'relaxation' ? 20 : niveau === 'croyance' ? 40 : 30;
+      setStatutBibliotheque('idle');
       urlVersBlob(url)
         .then(blob => sauvegarderDansBibliotheque('hypnose_pro', niveaux[niveau!].titre, dureeMin, script, blob))
-        .catch(() => {});
+        .then(() => setStatutBibliotheque('ok'))
+        .catch(() => setStatutBibliotheque('erreur'));
       await startBinauralBeats('hypnose', { type: niveau });
       audio.play().catch(err => console.error('Error playing audio:', err));
       setIsPlaying(true);
 
       // Si l'audio se termine naturellement avant la durée cible, on
-      // termine proprement plutôt que de laisser les binaural beats seuls.
-      audio.onended = () => handleTerminerSession();
+      // termine proprement — sauf en mode boucle, où il recommence seul.
+      audio.onended = () => { if (!enBoucle) handleTerminerSession(); };
 
       intervalRef.current = setInterval(() => {
         setSessionTime(prev => {
           const maxTime = niveau === 'relaxation' ? 20 * 60 : niveau === 'croyance' ? 40 * 60 : 30 * 60;
-          if (prev >= maxTime) {
+          if (!enBoucle && prev >= maxTime) {
             if (intervalRef.current) clearInterval(intervalRef.current);
             handleTerminerSession();
             return prev;
@@ -265,6 +271,12 @@ export default function HypnoseProAudio() {
               🧠 Theta beats pour trance profonde.
             </div>
 
+            <label style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', marginBottom: '1.4rem', cursor: 'pointer', color: 'var(--encre)' }}>
+              <input type="checkbox" checked={enBoucle} onChange={e => setEnBoucle(e.target.checked)}
+                style={{ width: 18, height: 18, accentColor: '#9D84B7' }} />
+              🔁 Écouter en boucle (recommence tout seul jusqu'à ce que je clique sur Terminer)
+            </label>
+
             <div style={{ display: 'flex', gap: '0.8rem' }}>
               <button onClick={() => setPhase('choix')} style={{ flex: 1, padding: '1rem', background: 'var(--bg-2)', border: '1.5px solid var(--carte-border)', borderRadius: '8px', cursor: 'pointer', fontWeight: 600 }}>
                 Retour
@@ -350,7 +362,19 @@ export default function HypnoseProAudio() {
                   <div style={{ color: '#9D84B7', marginBottom: '1.4rem', fontSize: '0.95rem' }}>
                     🎙️ Voix personnalisée en cours<br />
                     🧠 Theta beats pour trance
+                    {enBoucle && <><br />🔁 Lecture en boucle</>}
                   </div>
+                )}
+
+                {statutBibliotheque === 'ok' && (
+                  <p style={{ color: 'var(--encre-3)', fontSize: '0.8rem', marginBottom: '1rem' }}>
+                    🎧 Ajoutée à Ma bibliothèque pour un lancement instantané la prochaine fois
+                  </p>
+                )}
+                {statutBibliotheque === 'erreur' && (
+                  <p style={{ color: 'var(--chaud)', fontSize: '0.8rem', marginBottom: '1rem' }}>
+                    ⚠️ N'a pas pu être ajoutée à Ma bibliothèque (stockage local plein ou indisponible)
+                  </p>
                 )}
 
                 <p style={{ color: 'var(--encre-2)', marginBottom: '1.4rem' }}>
