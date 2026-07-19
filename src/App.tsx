@@ -20,6 +20,7 @@ import HypnoseProAudio from './pages/HypnoseProAudio';
 import Visualisations from './pages/Visualisations';
 import VisualisationsProAudio from './pages/VisualisationsProAudio';
 import OutilsBonus from './pages/OutilsBonus';
+import Bibliotheque from './pages/Bibliotheque';
 
 type Theme = 'zen' | 'japon' | 'bouddha' | 'bambou';
 
@@ -135,6 +136,7 @@ function App() {
         <Route path="/visualisations"         element={<Visualisations />} />
         <Route path="/visualisations-pro"     element={<VisualisationsProAudio />} />
         <Route path="/outils-bonus"           element={<OutilsBonus />} />
+        <Route path="/bibliotheque"           element={<Bibliotheque />} />
         <Route path="/sos"                    element={<SOS />} />
         <Route path="/suivi"                  element={<Suivi />} />
         <Route path="/sauvegarde"             element={<Sauvegarde />} />

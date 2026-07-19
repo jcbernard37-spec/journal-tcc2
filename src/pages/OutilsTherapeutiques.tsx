@@ -64,6 +64,24 @@ export default function OutilsTherapeutiques() {
           ))}
         </div>
 
+        {/* Bibliothèque de séances déjà générées */}
+        <Link to="/bibliotheque" style={{ textDecoration: 'none' }}>
+          <div style={{
+            display: 'flex', alignItems: 'center', gap: '0.9rem',
+            background: 'var(--accent-pale)', border: '1px solid color-mix(in srgb, var(--accent) 30%, transparent)',
+            borderRadius: '12px', padding: '1rem 1.25rem', marginBottom: '2rem', cursor: 'pointer',
+          }}>
+            <span style={{ fontSize: '1.6rem' }}>🎧</span>
+            <div style={{ flex: 1 }}>
+              <div style={{ fontWeight: 700, color: 'var(--accent-fonce)' }}>Ma bibliothèque</div>
+              <div style={{ fontSize: '0.85rem', color: 'var(--encre-2)' }}>
+                Relance une séance déjà générée, instantanément — sans attendre.
+              </div>
+            </div>
+            <span style={{ color: 'var(--accent-fonce)', fontWeight: 700 }}>→</span>
+          </div>
+        </Link>
+
         {/* Note psychologique */}
         <div style={{ background: 'var(--bleu-pale)', border: '1px solid color-mix(in srgb, var(--bleu) 25%, transparent)', borderRadius: '12px', padding: '1rem 1.25rem', marginBottom: '2rem', fontSize: '0.88rem', color: 'var(--bleu)' }}>
           <strong>Ces outils complètent, sans remplacer, un suivi thérapeutique professionnel.</strong>
