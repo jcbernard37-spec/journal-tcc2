@@ -10,12 +10,30 @@ declare global {
 
 // @ts-ignore
 const CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID || '';
-const SCOPES = 'https://www.googleapis.com/auth/drive.file';
+const SCOPES = 'https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/userinfo.email';
 
 let accessToken = '';
 let tokenClient: any = null;
 let driveFolderId: string | null = null;
 let userEmail = '';
+
+// ⚠️ Restauration IMMÉDIATE au chargement du module (pas seulement dans
+// connectGoogle()) — sinon isConnected() répond "non" sur n'importe quelle
+// page tant que l'utilisateur n'a pas recliqué sur "Connecter" dans CETTE
+// session, même s'il était déjà connecté juste avant (ex. après un
+// rechargement de page, ou en arrivant directement sur une autre page que
+// "Sauvegarde"). C'est ce qui empêchait la sync de la bibliothèque de se
+// déclencher : le code pensait qu'on n'était jamais connecté.
+if (typeof localStorage !== 'undefined') {
+  const savedToken = localStorage.getItem('googleAccessToken');
+  const savedEmail = localStorage.getItem('googleUserEmail');
+  const savedFolder = localStorage.getItem('driveFolderId');
+  if (savedToken) {
+    accessToken = savedToken;
+    if (savedEmail) userEmail = savedEmail;
+    if (savedFolder) driveFolderId = savedFolder;
+  }
+}
 
 // ── Charger le script Google Identity Services ──
 function chargerScriptGoogle(): Promise<void> {
@@ -43,19 +61,6 @@ export async function initializeGoogleAuth(): Promise<boolean> {
   }
   try {
     await chargerScriptGoogle();
-
-    // Restaurer un token existant s'il est encore valide
-    // ⚠️ localStorage, pas sessionStorage — sessionStorage est effacé à
-    // chaque fermeture d'onglet, ce qui forçait une reconnexion en
-    // permanence même sur le MÊME appareil.
-    const savedToken = localStorage.getItem('googleAccessToken');
-    const savedEmail = localStorage.getItem('googleUserEmail');
-    const savedFolder = localStorage.getItem('driveFolderId');
-    if (savedToken) {
-      accessToken = savedToken;
-      if (savedEmail) userEmail = savedEmail;
-      if (savedFolder) driveFolderId = savedFolder;
-    }
 
     // Créer le client de token
     tokenClient = window.google.accounts.oauth2.initTokenClient({
