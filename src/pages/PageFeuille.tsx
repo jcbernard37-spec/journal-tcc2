@@ -50,10 +50,10 @@ function SelecteurDistorsions({ valeur, onChange }: { valeur: string[]; onChange
         return (
           <details key={d.nom} style={{
             border: active ? '2px solid var(--sauge)' : '1px solid var(--lin-2)',
-            borderRadius: 'var(--rayon-sm)', background: active ? 'var(--sauge-pale)' : 'white',
-            padding: '0.7rem 0.9rem',
+            borderRadius: 'var(--rayon-sm)', background: active ? 'var(--sauge-pale)' : 'var(--carte-bg)',
+            padding: '0.7rem 0.9rem', color: 'var(--encre)',
           }}>
-            <summary style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.6rem', fontWeight: 700 }}>
+            <summary style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.6rem', fontWeight: 700, color: 'var(--encre)' }}>
               <input type="checkbox" checked={active} onChange={() => basculer(d.nom)}
                 onClick={ev => ev.stopPropagation()} style={{ width: 18, height: 18, accentColor: 'var(--sauge)' }} />
               {d.nom}
