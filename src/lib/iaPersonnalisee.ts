@@ -387,15 +387,25 @@ Tu es un instructeur de cohérence cardiaque expert.
 Crée une session guidée de cohérence cardiaque (5 minutes, méthode 365 : 3 fois par jour,
 6 respirations par minute, pendant 5 minutes) pour cette personne.
 
-Structure requise:
-1. Installation confortable, courte explication du principe (inspire 5 sec / expire 5 sec)
-2. Guidage du rythme respiratoire pendant toute la durée, avec des repères clairs et espacés
-   ("inspire... 2... 3... 4... 5... expire... 2... 3... 4... 5...")
-3. Quelques rappels doux de rester présent sans changer le rythme
-4. Clôture calme
+⚠️ IMPORTANT : le rythme précis (5 secondes inspire / 5 secondes expire) est déjà donné à
+la personne par un cercle qui grossit et rétrécit à l'écran, parfaitement synchronisé — ce
+n'est PAS à toi de compter les secondes à voix haute (une voix ne peut pas garantir un
+timing exact à la seconde près, ça sonnerait précipité ou décalé). Ton rôle est différent :
+installer un climat calme et accompagner SANS chercher à cadencer chaque respiration.
 
-Ton: Calme, rythmé, minimaliste — la voix ne doit jamais presser ni distraire du rythme
-respiratoire lui-même.
+Structure requise:
+1. Accueil bref, installation confortable, explique en une phrase que le cercle à l'écran
+   donne le rythme et qu'il suffit de le suivre des yeux (ou de fermer les yeux et sentir
+   son propre souffle si plus confortable)
+2. Quelques phrases très espacées (une toutes les 20-30 secondes maximum, jamais de compte
+   à rebours ni de "3, 2, 1"), de simples rappels doux : la posture, le lâcher des épaules,
+   la sensation de l'air, rien qui presse ou cadence
+3. Silence relatif pendant le cœur de la session — la voix ne doit pas remplir tout
+   l'espace sonore, quelques mots suffisent
+4. Clôture calme en fin de session
+
+Ton: Calme, très espacé, jamais rythmé ni pressé — c'est le cercle visuel qui guide le
+rythme, la voix ne fait qu'accompagner l'ambiance.
 Écris UNIQUEMENT le texte à voix haute, prêt pour synthèse vocale, sans titre ni note.
   `;
 

@@ -43,7 +43,13 @@ export default function OutilsBonus() {
   const [erreurMessage, setErreurMessage] = useState('');
   const [tempsSession, setTempsSession] = useState(0);
   const [audioPlayer, setAudioPlayer] = useState<HTMLAudioElement | null>(null);
+  // Rythme de respiration pour la Cohérence Cardiaque — piloté par un
+  // minuteur PRÉCIS, indépendant de la voix (qui ne peut pas garantir un
+  // timing exact à la seconde près). C'est ce cercle, pas la voix, qui
+  // donne le vrai rythme 5s inspire / 5s expire.
+  const [respirPhase, setRespirPhase] = useState<'inspire' | 'expire'>('inspire');
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const respirIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const zenPlayer = getZenPlayer();
 
@@ -53,6 +59,7 @@ export default function OutilsBonus() {
       audioPlayer?.pause();
       zenPlayer.stop();
       if (intervalRef.current) clearInterval(intervalRef.current);
+      if (respirIntervalRef.current) clearInterval(respirIntervalRef.current);
     };
   }, [audioPlayer]);
 
@@ -69,6 +76,17 @@ export default function OutilsBonus() {
     setEnPause(false);
     setTempsSession(0);
     setPhase('session');
+
+    // Le cercle de respiration démarre immédiatement, indépendamment de la
+    // voix — c'est LUI qui donne le vrai rythme précis (5s / 5s), pas la
+    // synthèse vocale qui ne peut pas garantir un timing exact à la seconde.
+    if (o === 'coherence') {
+      setRespirPhase('inspire');
+      if (respirIntervalRef.current) clearInterval(respirIntervalRef.current);
+      respirIntervalRef.current = setInterval(() => {
+        setRespirPhase(prev => (prev === 'inspire' ? 'expire' : 'inspire'));
+      }, 5000);
+    }
 
     try {
       const profile = loadUserProfile();
@@ -111,11 +129,18 @@ export default function OutilsBonus() {
       audioPlayer.play().catch(err => console.error('Error resuming audio:', err));
       if (outil && AVEC_MUSIQUE.includes(outil)) zenPlayer.play(0.35);
       intervalRef.current = setInterval(() => setTempsSession(t => t + 1), 1000);
+      if (outil === 'coherence') {
+        setRespirPhase('inspire');
+        respirIntervalRef.current = setInterval(() => {
+          setRespirPhase(prev => (prev === 'inspire' ? 'expire' : 'inspire'));
+        }, 5000);
+      }
       setEnPause(false);
     } else {
       audioPlayer.pause();
       zenPlayer.stop();
       if (intervalRef.current) clearInterval(intervalRef.current);
+      if (respirIntervalRef.current) clearInterval(respirIntervalRef.current);
       setEnPause(true);
     }
   };
@@ -124,6 +149,7 @@ export default function OutilsBonus() {
     audioPlayer?.pause();
     zenPlayer.stop();
     if (intervalRef.current) clearInterval(intervalRef.current);
+    if (respirIntervalRef.current) clearInterval(respirIntervalRef.current);
     setPhase('apres');
   };
 
@@ -205,12 +231,29 @@ export default function OutilsBonus() {
 
         {phase === 'session' && cfg && !erreurGeneration && (
           <div style={{ background: 'var(--carte-bg)', borderRadius: '16px', padding: '2rem', border: '1px solid var(--carte-border)', textAlign: 'center' }}>
-            <div style={{ fontSize: '3rem', marginBottom: '0.75rem' }}>{cfg.icon}</div>
+            {outil === 'coherence' ? (
+              <div style={{ margin: '0 auto 1rem', width: 170, height: 170, position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <div style={{
+                  width: respirPhase === 'inspire' && !enPause ? 160 : 70,
+                  height: respirPhase === 'inspire' && !enPause ? 160 : 70,
+                  borderRadius: '50%',
+                  background: `${cfg.couleur}30`,
+                  border: `3px solid ${cfg.couleur}`,
+                  transition: enPause ? 'none' : 'width 5s ease-in-out, height 5s ease-in-out',
+                }} />
+                <div style={{ position: 'absolute', fontWeight: 700, color: cfg.couleur, fontSize: '1.05rem' }}>
+                  {enPause ? '⏸' : respirPhase === 'inspire' ? 'Inspire…' : 'Expire…'}
+                </div>
+              </div>
+            ) : (
+              <div style={{ fontSize: '3rem', marginBottom: '0.75rem' }}>{cfg.icon}</div>
+            )}
             <h2 style={{ marginBottom: '0.5rem' }}>{cfg.titre}</h2>
 
             {isLoading ? (
               <p style={{ color: 'var(--encre-3)', marginBottom: '2rem', fontSize: '0.9rem' }}>
                 Ta voix personnalisée se prépare, quelques instants...
+                {outil === 'coherence' && ' Suis déjà le cercle ci-dessus, il est réglé au bon rythme.'}
               </p>
             ) : (
               <>
