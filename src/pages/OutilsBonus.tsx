@@ -64,6 +64,17 @@ export default function OutilsBonus() {
   }, [audioPlayer]);
 
   const demarrer = async (o: Outil) => {
+    // Empêche un double-clic / double-tap de lancer DEUX générations en
+    // parallèle, chacune avec sa propre voix qui se superposerait à l'autre.
+    if (phase === 'session' || isLoading) return;
+
+    // Coupe tout audio résiduel d'une session précédente avant d'en
+    // démarrer une nouvelle (sécurité supplémentaire).
+    audioPlayer?.pause();
+    zenPlayer.stop();
+    if (intervalRef.current) clearInterval(intervalRef.current);
+    if (respirIntervalRef.current) clearInterval(respirIntervalRef.current);
+
     // 🔓 Débloque l'audio AVANT tout await — indispensable sur iOS Safari.
     const audio = debloquerAudio();
     setAudioPlayer(audio);
