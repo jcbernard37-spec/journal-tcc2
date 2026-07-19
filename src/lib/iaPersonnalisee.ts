@@ -346,6 +346,128 @@ Utilise:
 }
 
 /**
+ * Génère un script Tapping EFT PERSONNALISÉ
+ */
+export async function generatePersonalizedTapping(profile: UserProfile): Promise<string> {
+  const croyances = profile.croyancesLimitantes || [];
+  const ressources = profile.ressources || [];
+
+  const prompt = `
+Tu es un praticien EFT (Emotional Freedom Technique / tapping) expert et bienveillant.
+
+Crée une session de tapping EFT guidée (10 minutes) pour cette personne.
+
+Contexte:
+- Croyances limitantes identifiées: ${croyances.join(', ') || 'non précisées'}
+- Ses ressources: ${ressources.join(', ') || 'non précisées'}
+
+Structure requise:
+1. Installation (identifie l'intensité émotionnelle du jour, échelle 0-10)
+2. Phrase de préparation ("Même si je ressens..., je m'accepte profondément et complètement")
+3. Séquence de tapping complète, point par point (sommet du crâne, sourcil, coin de l'œil,
+   sous l'œil, sous le nez, menton, clavicule, sous le bras), avec une phrase courte à chaque point
+4. Vérification de l'intensité, deuxième tour si besoin en intégrant ses ressources
+5. Clôture positive et ancrage
+
+Ton: Chaleureux, rythmé, précis dans les instructions gestuelles (indique clairement
+"tapote maintenant sur...").
+Écris UNIQUEMENT le texte à voix haute, prêt pour synthèse vocale, sans titre ni note.
+  `;
+
+  return callClaudeAPI(prompt);
+}
+
+/**
+ * Génère un script de Cohérence Cardiaque PERSONNALISÉ
+ */
+export async function generatePersonalizedCoherence(profile: UserProfile): Promise<string> {
+  const prompt = `
+Tu es un instructeur de cohérence cardiaque expert.
+
+Crée une session guidée de cohérence cardiaque (5 minutes, méthode 365 : 3 fois par jour,
+6 respirations par minute, pendant 5 minutes) pour cette personne.
+
+Structure requise:
+1. Installation confortable, courte explication du principe (inspire 5 sec / expire 5 sec)
+2. Guidage du rythme respiratoire pendant toute la durée, avec des repères clairs et espacés
+   ("inspire... 2... 3... 4... 5... expire... 2... 3... 4... 5...")
+3. Quelques rappels doux de rester présent sans changer le rythme
+4. Clôture calme
+
+Ton: Calme, rythmé, minimaliste — la voix ne doit jamais presser ni distraire du rythme
+respiratoire lui-même.
+Écris UNIQUEMENT le texte à voix haute, prêt pour synthèse vocale, sans titre ni note.
+  `;
+
+  return callClaudeAPI(prompt);
+}
+
+/**
+ * Génère une Méditation de Bienveillance (Metta) PERSONNALISÉE
+ */
+export async function generatePersonalizedMeditation(profile: UserProfile): Promise<string> {
+  const ressources = profile.ressources || [];
+  const metaphors = profile.metaphoresPreferees || [];
+
+  const prompt = `
+Tu es un instructeur de méditation de pleine conscience et de bienveillance (Metta),
+dans la tradition de Jon Kabat-Zinn.
+
+Crée une méditation de bienveillance guidée (20 minutes) pour cette personne.
+
+Contexte:
+- Ses ressources: ${ressources.join(', ') || 'non précisées'}
+- Métaphores qui parlent: ${metaphors.join(', ') || 'non précisées'}
+
+Structure classique du Metta:
+1. Installation, ancrage dans le corps et la respiration (3 min)
+2. Bienveillance envers soi-même ("Puissé-je être en paix, puissé-je être heureux/se...") (5 min)
+3. Bienveillance envers un être cher (5 min)
+4. Bienveillance envers une personne neutre (3 min)
+5. Bienveillance envers tous les êtres (3 min)
+6. Retour progressif (1 min)
+
+Ton: Doux, spacieux, jamais pressé, avec de vrais silences suggérés entre les phrases.
+Écris UNIQUEMENT le texte à voix haute, prêt pour synthèse vocale, sans titre ni note.
+  `;
+
+  return callClaudeAPI(prompt);
+}
+
+/**
+ * Génère des Affirmations Guidées PERSONNALISÉES
+ */
+export async function generatePersonalizedAffirmations(profile: UserProfile): Promise<string> {
+  const croyances = profile.croyancesLimitantes || [];
+  const ressources = profile.ressources || [];
+  const objectif = profile.anamnese?.objectifsTherapeutiques || '';
+
+  const prompt = `
+Tu es un guide expert en affirmations positives et reprogrammation de croyances.
+
+Crée une session d'affirmations guidées (10 minutes) pour cette personne.
+
+Contexte:
+- Croyances limitantes à transformer: ${croyances.join(', ') || 'non précisées'}
+- Ses ressources (preuves à l'appui des nouvelles croyances): ${ressources.join(', ') || 'non précisées'}
+- Ses objectifs: ${objectif || 'non précisés'}
+
+Structure requise:
+1. Installation et respiration (1 min)
+2. 8 à 10 affirmations personnalisées, formulées au présent, à la première personne,
+   directement liées à ses croyances limitantes et appuyées sur ses ressources réelles
+   — chaque affirmation répétée deux fois, avec un temps de silence suggéré entre chacune
+3. Clôture qui invite à emporter une affirmation phare avec soi dans la journée
+
+Ton: Assuré, chaleureux, jamais moralisateur — les affirmations doivent sonner crédibles
+et ancrées dans du vécu réel, pas dans du vœu pieux générique.
+Écris UNIQUEMENT le texte à voix haute, prêt pour synthèse vocale, sans titre ni note.
+  `;
+
+  return callClaudeAPI(prompt);
+}
+
+/**
  * Construit une Sankalpa personnalisée
  */
 function buildPersonalSankalpa(profile: UserProfile): string {
