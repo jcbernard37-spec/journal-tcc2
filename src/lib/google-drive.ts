@@ -233,6 +233,93 @@ export async function loadFromDrive(fileName: string): Promise<string | null> {
   }
 }
 
+// ── Sauvegarder un fichier BINAIRE (audio, images...) ──
+export async function saveBinaryToDrive(fileName: string, blob: Blob, mimeType = 'audio/mpeg'): Promise<boolean> {
+  if (!accessToken || !driveFolderId) return false;
+
+  try {
+    const searchResponse = await fetch(
+      `https://www.googleapis.com/drive/v3/files?q=${encodeURIComponent(`name='${fileName}' and '${driveFolderId}' in parents and trashed=false`)}&spaces=drive&fields=files(id,name)`,
+      { headers: { Authorization: `Bearer ${accessToken}` } }
+    );
+    const searchResult = await searchResponse.json();
+
+    if (searchResult.files && searchResult.files.length > 0) {
+      const fileId = searchResult.files[0].id;
+      await fetch(`https://www.googleapis.com/upload/drive/v3/files/${fileId}?uploadType=media`, {
+        method: 'PATCH',
+        headers: { Authorization: `Bearer ${accessToken}`, 'Content-Type': mimeType },
+        body: blob,
+      });
+    } else {
+      // ⚠️ On construit le multipart avec un Blob (pas une concaténation de
+      // chaînes) pour ne pas corrompre les octets binaires de l'audio.
+      const boundary = 'foo_bar_baz_binaire';
+      const metadata = { name: fileName, parents: [driveFolderId], mimeType };
+      const debut = `--${boundary}\r\nContent-Type: application/json; charset=UTF-8\r\n\r\n${JSON.stringify(metadata)}\r\n--${boundary}\r\nContent-Type: ${mimeType}\r\n\r\n`;
+      const fin = `\r\n--${boundary}--`;
+      const corpsMultipart = new Blob([debut, blob, fin]);
+
+      await fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart', {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+          'Content-Type': `multipart/related; boundary=${boundary}`,
+        },
+        body: corpsMultipart,
+      });
+    }
+    return true;
+  } catch (error) {
+    console.error('Erreur sauvegarde binaire Google Drive:', error);
+    return false;
+  }
+}
+
+// ── Charger un fichier BINAIRE (audio, images...) ──
+export async function loadBinaryFromDrive(fileName: string): Promise<Blob | null> {
+  if (!accessToken || !driveFolderId) return null;
+
+  try {
+    const response = await fetch(
+      `https://www.googleapis.com/drive/v3/files?q=${encodeURIComponent(`name='${fileName}' and '${driveFolderId}' in parents and trashed=false`)}&spaces=drive&fields=files(id,name)`,
+      { headers: { Authorization: `Bearer ${accessToken}` } }
+    );
+    const result = await response.json();
+    if (!result.files || result.files.length === 0) return null;
+
+    const fileId = result.files[0].id;
+    const contentResponse = await fetch(
+      `https://www.googleapis.com/drive/v3/files/${fileId}?alt=media`,
+      { headers: { Authorization: `Bearer ${accessToken}` } }
+    );
+    return await contentResponse.blob();
+  } catch (error) {
+    console.error('Erreur chargement binaire Google Drive:', error);
+    return null;
+  }
+}
+
+// ── Supprimer un fichier (par nom) ──
+export async function supprimerFichierDrive(fileName: string): Promise<void> {
+  if (!accessToken || !driveFolderId) return;
+  try {
+    const response = await fetch(
+      `https://www.googleapis.com/drive/v3/files?q=${encodeURIComponent(`name='${fileName}' and '${driveFolderId}' in parents and trashed=false`)}&spaces=drive&fields=files(id,name)`,
+      { headers: { Authorization: `Bearer ${accessToken}` } }
+    );
+    const result = await response.json();
+    if (result.files && result.files.length > 0) {
+      await fetch(`https://www.googleapis.com/drive/v3/files/${result.files[0].id}`, {
+        method: 'DELETE',
+        headers: { Authorization: `Bearer ${accessToken}` },
+      });
+    }
+  } catch (error) {
+    console.error('Erreur suppression Google Drive:', error);
+  }
+}
+
 // ── État ──
 export function isConnected(): boolean {
   return !!accessToken;

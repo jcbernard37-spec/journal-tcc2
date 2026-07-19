@@ -27,6 +27,7 @@ export default function Bibliotheque() {
   const [lectureId, setLectureId] = useState<string | null>(null);
   const [audioEnCours, setAudioEnCours] = useState(false);
   const [enBoucle, setEnBoucle] = useState(false);
+  const [telechargementId, setTelechargementId] = useState<string | null>(null);
   const audioPlayerRef = useRef<HTMLAudioElement | null>(null);
 
   useEffect(() => {
@@ -54,7 +55,12 @@ export default function Bibliotheque() {
       return;
     }
 
+    // Si la séance vient d'un autre appareil, l'audio doit d'abord être
+    // téléchargé depuis Drive — ça peut prendre un instant (fichier de
+    // plusieurs Mo), d'où cet indicateur.
+    setTelechargementId(seance.id);
     const url = await chargerAudioBibliotheque(seance.id);
+    setTelechargementId(null);
     if (!url) return;
 
     const audio = new Audio(url);
@@ -151,13 +157,15 @@ export default function Bibliotheque() {
                     {enLecture && audioEnCours && ' · 🔊 en cours'}
                   </div>
                 </div>
-                <button onClick={() => lancer(seance)}
+                <button onClick={() => lancer(seance)} disabled={telechargementId === seance.id}
                   style={{
                     padding: '0.6rem 1rem', borderRadius: '999px', border: 'none',
-                    background: info.couleur, color: 'white', fontWeight: 700, cursor: 'pointer',
+                    background: info.couleur, color: 'white', fontWeight: 700,
+                    cursor: telechargementId === seance.id ? 'default' : 'pointer',
+                    opacity: telechargementId === seance.id ? 0.6 : 1,
                     flexShrink: 0,
                   }}>
-                  {enLecture && audioEnCours ? '⏸ Pause' : '▶ Lancer'}
+                  {telechargementId === seance.id ? '⏳ Téléchargement…' : enLecture && audioEnCours ? '⏸ Pause' : '▶ Lancer'}
                 </button>
                 {enLecture && (
                   <button onClick={() => terminerEtSauvegarder(seance)}
